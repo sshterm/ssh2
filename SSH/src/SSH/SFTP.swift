@@ -460,9 +460,6 @@ public extension SSH {
     /// - Returns: A boolean indicating whether the upload was successful.
     func upload(local: InputStream, remote: String, permissions: FilePermissions = .default, progress: @escaping (_ send: Int) -> Bool) async -> Bool {
         await call { [self] in
-            guard let rawSession else {
-                return false
-            }
             let remote = SFTPOutputStream(ssh: self, remotePath: remote, permissions: permissions)
             guard io.Copy(local, remote, buffer, { send in
                 progress(send)
@@ -483,9 +480,6 @@ public extension SSH {
     /// - Returns: A boolean value indicating whether the download was successful.
     func download(remote: String, local: OutputStream, progress: @escaping (_ send: Int, _ size: Int) -> Bool) async -> Bool {
         await call { [self] in
-            guard let rawSession else {
-                return false
-            }
             let remote = SFTPInputStream(ssh: self, remotePath: remote)
             guard io.Copy(remote, local, buffer, { send in
                 progress(send, remote.size)

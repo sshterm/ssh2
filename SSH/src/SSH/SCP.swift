@@ -16,9 +16,6 @@ public extension SSH {
     /// - Returns: A `Bool` indicating whether the file was successfully sent.
     func send(local: String, remote: String, permissions: FilePermissions = .default, progress: @escaping (_ send: Int) -> Bool) async -> Bool {
         await call { [self] in
-            guard let rawSession else {
-                return false
-            }
             guard let stream = InputStream(fileAtPath: local) else {
                 return false
             }
@@ -45,9 +42,6 @@ public extension SSH {
     /// - Returns: A Boolean value indicating whether the file was successfully received.
     func recv(remote: String, local: String, progress: @escaping (_ send: Int, _ size: Int) -> Bool) async -> Bool {
         await call { [self] in
-            guard let rawSession else {
-                return false
-            }
             guard let stream = OutputStream(toFileAtPath: local, append: false) else {
                 return false
             }
