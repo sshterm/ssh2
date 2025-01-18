@@ -9,6 +9,9 @@ let package = Package(
         .macOS(.v13),
         .iOS(.v16),
     ],
+    dependencies: [
+        .package(url: "https://github.com/sshterm/cssh.git", branch: "main"),
+    ],
     products: [
         .library(
             name: "SSH",
@@ -18,7 +21,7 @@ let package = Package(
     targets: [
         .target(
             name: "SSH",
-            dependencies: ["CSSH", "SSHKey"],
+            dependencies: [.product(name: "CSSH", package: "cssh"), "SSHKey"],
             path: "SSH/src",
             linkerSettings: [
                 .linkedLibrary("z"),
@@ -26,13 +29,9 @@ let package = Package(
         ),
         .target(
             name: "SSHKey",
-            dependencies: ["CSSH"],
+            dependencies: [.product(name: "CSSH", package: "cssh")],
             path: "SSHKey/src"
         ),
-        .binaryTarget(
-            name: "CSSH",
-            path: "xcframework/CSSH.xcframework"
-        )
     ],
     swiftLanguageVersions: [.v5]
 )
