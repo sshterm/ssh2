@@ -92,7 +92,9 @@ class SFTPOutputStream: OutputStream {
         guard let rawSFTP else {
             return
         }
-        handle = libssh2_sftp_open_ex(rawSFTP, remotePath, remotePath.count.load(), UInt(LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT | LIBSSH2_FXF_TRUNC), permissions.rawInt, LIBSSH2_SFTP_OPENFILE)
+        handle = ssh.callSSH2 { [self] in
+            libssh2_sftp_open_ex(rawSFTP, remotePath, remotePath.count.load(), UInt(LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT | LIBSSH2_FXF_TRUNC), permissions.rawInt, LIBSSH2_SFTP_OPENFILE)
+        }
     }
 
     override func close() {
@@ -106,5 +108,98 @@ class SFTPOutputStream: OutputStream {
 
     override var hasSpaceAvailable: Bool {
         handle != nil && nwrite > 0 && libssh2_sftp_last_error(handle) == LIBSSH2_FX_OK
+    }
+}
+
+class SCPInputStream: InputStream {
+    var ssh: SSH
+    let remotePath: String
+    var handle: OpaquePointer?
+    var got: Int = 0
+    var nread: Int = 0
+
+    var size: Int = 0
+
+    init(ssh: SSH, remotePath: String) {
+        self.ssh = ssh
+        self.remotePath = remotePath
+        super.init()
+    }
+
+    override func read(_ buffer: UnsafeMutablePointer<UInt8>, maxLength len: Int) -> Int {
+        guard let handle else {
+            return -1
+        }
+        var amount = len
+        if size - got < amount {
+            amount = size - got
+        }
+        nread = ssh.callSSH2 {
+            libssh2_channel_read_ex(handle, 0, buffer, amount)
+        }
+        got += nread
+        return nread
+    }
+
+    override func open() {
+        var fileinfo = libssh2_struct_stat()
+        handle = ssh.callSSH2 { [self] in
+            libssh2_scp_recv2(ssh.rawSession, remotePath, &fileinfo)
+        }
+
+        size = fileinfo.st_size.load()
+    }
+
+    override func close() {
+        if let handle {
+            libssh2_channel_send_eof(handle)
+            libssh2_channel_free(handle)
+        }
+    }
+
+    override var hasBytesAvailable: Bool {
+        handle != nil && got < size && nread > 0
+    }
+}
+
+class SCPOutputStream: OutputStream {
+    var ssh: SSH
+    let remotePath: String
+    var nwrite: Int = 0
+    var handle: OpaquePointer?
+    let permissions: FilePermissions
+    let size: Int64
+
+    init(ssh: SSH, remotePath: String, permissions: FilePermissions, size: Int64) {
+        self.ssh = ssh
+        self.remotePath = remotePath
+        self.permissions = permissions
+        self.size = size
+        super.init()
+    }
+
+    override func write(_ buffer: UnsafePointer<UInt8>, maxLength len: Int) -> Int {
+        guard let handle else {
+            return -1
+        }
+        nwrite = ssh.callSSH2 { libssh2_channel_write_ex(handle, 0, buffer, len) }
+        return nwrite
+    }
+
+    override func open() {
+        handle = ssh.callSSH2 { [self] in
+            libssh2_scp_send64(ssh.rawSession, remotePath, permissions.rawValue, size, 0, 0)
+        }
+    }
+
+    override func close() {
+        if let handle {
+            libssh2_channel_send_eof(handle)
+            libssh2_channel_free(handle)
+        }
+    }
+
+    override var hasSpaceAvailable: Bool {
+        handle != nil && nwrite > 0
     }
 }

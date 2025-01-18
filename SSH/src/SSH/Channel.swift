@@ -3,6 +3,7 @@
 // Created by admin@ssh2.app 2025/1/18.
 
 import CSSH
+import Darwin
 import Foundation
 
 public extension SSH {
