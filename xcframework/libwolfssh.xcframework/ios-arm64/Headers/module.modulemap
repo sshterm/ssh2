@@ -1,4 +1,0 @@
-module wolfSSH{
-    header "wolfssh.h"
-    export *
-}
