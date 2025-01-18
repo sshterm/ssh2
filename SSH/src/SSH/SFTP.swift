@@ -14,9 +14,12 @@ public extension SSH {
     /// - Returns: A boolean value indicating whether the SFTP session was successfully opened.
     func openSFTP() async -> Bool {
         await call { [self] in
+            guard let rawSession else {
+                return false
+            }
             freeSFTP()
-            let rawSFTP = self.callSSH2 {
-                libssh2_sftp_init(self.rawSession)
+            let rawSFTP = callSSH2 {
+                libssh2_sftp_init(rawSession)
             }
             guard let rawSFTP else {
                 return false
@@ -54,7 +57,7 @@ public extension SSH {
                 return nil
             }
             let buf: Buffer<CChar> = .init()
-            let rc = self.callSSH2 {
+            let rc = callSSH2 {
                 libssh2_sftp_symlink_ex(rawSFTP, path, path.count.load(), buf.buffer, buffer.load(), LIBSSH2_SFTP_READLINK)
             }
             guard rc > 0 else {
@@ -79,7 +82,7 @@ public extension SSH {
                 return nil
             }
             let buf: Buffer<CChar> = .init()
-            let rc = self.callSSH2 {
+            let rc = callSSH2 {
                 libssh2_sftp_symlink_ex(rawSFTP, path, path.count.load(), buf.buffer, buffer.load(), LIBSSH2_SFTP_REALPATH)
             }
             guard rc > 0 else {
@@ -105,7 +108,7 @@ public extension SSH {
             guard let rawSFTP else {
                 return false
             }
-            let rc = self.callSSH2 {
+            let rc = callSSH2 {
                 libssh2_sftp_rename_ex(rawSFTP, orig, orig.count.load(), newname, newname.count.load(), Int(LIBSSH2_SFTP_RENAME_OVERWRITE | LIBSSH2_SFTP_RENAME_ATOMIC | LIBSSH2_SFTP_RENAME_NATIVE))
             }
             guard rc == LIBSSH2_ERROR_NONE else {
@@ -129,7 +132,7 @@ public extension SSH {
             guard let rawSFTP else {
                 return false
             }
-            let rc = self.callSSH2 {
+            let rc = callSSH2 {
                 libssh2_sftp_mkdir_ex(rawSFTP, path, path.count.load(), permissions.rawInt)
             }
             guard rc == LIBSSH2_ERROR_NONE else {
@@ -155,7 +158,7 @@ public extension SSH {
             guard let rawSFTP else {
                 return false
             }
-            let handle = self.callSSH2 {
+            let handle = callSSH2 {
                 libssh2_sftp_open_ex(rawSFTP, path, path.count.load(), UInt(LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT | LIBSSH2_FXF_TRUNC), permissions.rawInt, LIBSSH2_SFTP_OPENFILE)
             }
             guard let handle else {
@@ -179,7 +182,7 @@ public extension SSH {
             guard let rawSFTP else {
                 return false
             }
-            let rc = self.callSSH2 {
+            let rc = callSSH2 {
                 libssh2_sftp_rmdir_ex(rawSFTP, path, path.count.load())
             }
             guard rc == LIBSSH2_ERROR_NONE else {
@@ -201,7 +204,7 @@ public extension SSH {
             guard let rawSFTP else {
                 return false
             }
-            let rc = self.callSSH2 {
+            let rc = callSSH2 {
                 libssh2_sftp_unlink_ex(rawSFTP, path, path.count.load())
             }
             guard rc == LIBSSH2_ERROR_NONE else {
@@ -222,7 +225,7 @@ public extension SSH {
             guard let rawSFTP else {
                 return false
             }
-            let rc = self.callSSH2 {
+            let rc = callSSH2 {
                 libssh2_sftp_symlink_ex(rawSFTP, orig, orig.count.load(), linkpath.bytes, linkpath.count.load(), LIBSSH2_SFTP_SYMLINK)
             }
             guard rc == LIBSSH2_ERROR_NONE else {
@@ -250,7 +253,7 @@ public extension SSH {
             attrs.uid = uid
             attrs.gid = gid
 
-            let rc = self.callSSH2 {
+            let rc = callSSH2 {
                 libssh2_sftp_stat_ex(rawSFTP, path, path.count.load(), LIBSSH2_SFTP_SETSTAT, &attrs)
             }
             guard rc == LIBSSH2_ERROR_NONE else {
@@ -281,7 +284,7 @@ public extension SSH {
             attrs.flags = UInt(LIBSSH2_SFTP_ATTR_PERMISSIONS)
             attrs.permissions = permissions.rawUInt
 
-            let rc = self.callSSH2 {
+            let rc = callSSH2 {
                 libssh2_sftp_stat_ex(rawSFTP, path, path.count.load(), LIBSSH2_SFTP_SETSTAT, &attrs)
             }
             guard rc == LIBSSH2_ERROR_NONE else {
@@ -303,7 +306,7 @@ public extension SSH {
                 return nil
             }
             var st = LIBSSH2_SFTP_STATVFS()
-            let code = self.callSSH2 {
+            let code = callSSH2 {
                 libssh2_sftp_statvfs(rawSFTP, path, path.count, &st)
             }
             guard code == LIBSSH2_ERROR_NONE else {
@@ -328,7 +331,7 @@ public extension SSH {
                 return nil
             }
             var st = LIBSSH2_SFTP_ATTRIBUTES()
-            let code = self.callSSH2 {
+            let code = callSSH2 {
                 libssh2_sftp_stat_ex(rawSFTP, path, path.count.load(), LIBSSH2_SFTP_STAT, &st)
             }
             guard code == LIBSSH2_ERROR_NONE else {
@@ -352,7 +355,7 @@ public extension SSH {
             guard let rawSFTP else {
                 return []
             }
-            let handle = self.callSSH2 {
+            let handle = callSSH2 {
                 libssh2_sftp_open_ex(rawSFTP, path, path.count.load(), UInt(LIBSSH2_FXF_READ), 0, LIBSSH2_SFTP_OPENDIR)
             }
             guard let handle else {
@@ -368,7 +371,7 @@ public extension SSH {
             let longEntry: Buffer<CChar> = .init(maxLen)
             var attrs = LIBSSH2_SFTP_ATTRIBUTES()
             repeat {
-                rc = self.callSSH2 {
+                rc = callSSH2 {
                     libssh2_sftp_readdir_ex(handle, buffer.buffer, maxLen, longEntry.buffer, maxLen, &attrs)
                 }
                 if rc > 0 {

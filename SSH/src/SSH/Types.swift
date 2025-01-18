@@ -77,6 +77,10 @@ public struct Hostkey {
 /// - xterm: A PTY type emulating the Xterm terminal.
 public enum PtyType: String, CaseIterable {
     case vanilla, vt100, vt102, vt220, ansi, xterm
+
+    var name: String {
+        rawValue
+    }
 }
 
 /// An enumeration representing different types of SSH trace levels.

@@ -52,6 +52,9 @@ public class SSH {
     var lockRow = NSLock()
     var lockSSH2 = NSLock()
 
+    let queue: DispatchQueue = .init(label: "SSH Queue", attributes: .concurrent)
+    var socketSource: DispatchSourceRead?
+
     /// An `OperationQueue` instance used to manage and execute a collection of operations.
     /// This queue allows for the concurrent execution of multiple operations, providing
     /// a way to manage dependencies and priorities among them.

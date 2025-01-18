@@ -18,8 +18,11 @@ public extension SSH {
     /// - Note: The function uses `libssh2_channel_open_ex` to open the channel and `libssh2_channel_setenv_ex` to set the environment variable.
     func openChannel(lang: String = "") async -> Bool {
         await call { [self] in
+            guard let rawSession else {
+                return false
+            }
             freeChannel()
-            let rawChannel = callSSH2 { libssh2_channel_open_ex(self.rawSession, "session", 7, 2 * 1024 * 1024, 32768, nil, 0) }
+            let rawChannel = callSSH2 { libssh2_channel_open_ex(rawSession, "session", 7, 2 * 1024 * 1024, 32768, nil, 0) }
             if !lang.isEmpty {
                 callSSH2 {
                     libssh2_channel_setenv_ex(rawChannel, "LANG", 4, lang, lang.count.load())
@@ -89,8 +92,8 @@ public extension SSH {
         guard let rawChannel else {
             return false
         }
-        return await call {
-            let code = self.callSSH2 {
+        return await call { [self] in
+            let code = callSSH2 {
                 libssh2_channel_setenv_ex(rawChannel, name, name.count.load(), value, value.count.load())
             }
             guard code == LIBSSH2_ERROR_NONE else {
@@ -111,8 +114,8 @@ public extension SSH {
         guard let rawChannel else {
             return false
         }
-        return await call {
-            let code = self.callSSH2 {
+        return await call { [self] in
+            let code = callSSH2 {
                 libssh2_channel_write_ex(rawChannel, stderr ? SSH_EXTENDED_DATA_STDERR : 0, data.bytes, data.count)
             }
             guard code > 0 else {
@@ -139,7 +142,7 @@ public extension SSH {
         }
         return await call { [self] in
             let buf: Buffer<UInt8> = .init(buffer)
-            let count = self.callSSH2(wait) {
+            let count = callSSH2(wait) {
                 libssh2_channel_read_ex(rawChannel, stderr ? SSH_EXTENDED_DATA_STDERR : 0, buf.buffer, buffer)
             }
             guard count >= 0 else {
@@ -149,12 +152,50 @@ public extension SSH {
         }
     }
 
+    /// Reads data from the SSH channel and writes it to the provided output stream.
+    ///
+    /// - Parameters:
+    ///   - output: The `OutputStream` to which the data will be written.
+    ///   - err: A Boolean value indicating whether to read from the error stream. Defaults to `false`.
+    ///   - wait: A Boolean value indicating whether to wait for the read operation to complete. Defaults to `true`.
+    /// - Returns: The number of bytes read, or `-1` if the channel is not available.
+    func read(_ output: OutputStream, err: Bool = false, wait: Bool = true) -> Int {
+        guard let rawChannel else {
+            return -1
+        }
+        let rc = callSSH2(wait) { [self] in
+            return io.Copy(output, ChannelInputStream(handle: rawChannel, err: err), buffer)
+        }
+        return rc
+    }
+
+    /// Reads data from the provided output streams.
+    ///
+    /// - Parameters:
+    ///   - stdout: The output stream for standard output.
+    ///   - stderr: The output stream for standard error.
+    /// - Returns: A tuple containing the number of bytes read from the standard output and standard error streams.
+    func read(_ stdout: OutputStream, _ stderr: OutputStream) -> (Int, Int) {
+        var rc, erc: Int
+        rc = read(stdout, wait: false)
+        erc = read(stderr, err: true, wait: false)
+        return (rc, erc)
+    }
+
+    /// Initiates a subsystem request on the SSH channel.
+    ///
+    /// This function sends a request to start a subsystem on the SSH channel using the provided subsystem name.
+    ///
+    /// - Parameter name: The name of the subsystem to start.
+    /// - Returns: A boolean value indicating whether the subsystem request was successful.
+    /// - Note: This function is asynchronous and uses Swift's concurrency model.
+    /// - Important: Ensure that `rawChannel` is properly initialized before calling this function.
     func subsystem(name: String) async -> Bool {
         guard let rawChannel else {
             return false
         }
         return await call { [self] in
-            let code = self.callSSH2 {
+            let code = callSSH2 {
                 libssh2_channel_process_startup(rawChannel, "subsystem", 9, name, name.count.load())
             }
             guard code == LIBSSH2_ERROR_NONE else {
@@ -252,6 +293,17 @@ public extension SSH {
         return true
     }
 
+    func channelBlocking(_ blocking: Bool) {
+        if let rawChannel {
+            libssh2_channel_set_blocking(rawChannel, blocking ? 1 : 0)
+        }
+    }
+
+    func cancelSources() {
+        socketSource?.cancel()
+        socketSource = nil
+    }
+
     /// Frees the SSH channel if it exists.
     ///
     /// This function sets the channel to non-blocking mode, frees the channel,
@@ -270,6 +322,7 @@ public extension SSH {
             defer {
                 lockSSH2.unlock()
             }
+            closeShell()
             libssh2_channel_free(rawChannel)
             addOperation {
                 self.channelDelegate?.disconnect(ssh: self)

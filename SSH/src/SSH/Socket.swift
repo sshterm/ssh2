@@ -29,12 +29,12 @@ public extension SSH {
     /// - Parameter sockfd: The socket file descriptor to connect to.
     /// - Returns: A boolean value indicating whether the connection was successful.
     func connect(sockfd: SockFD) async -> Bool {
-        await call {
+        await call { [self] in
             guard sockfd != -1 else {
                 return false
             }
             self.sockfd = sockfd
-            return self.isConnected
+            return isConnected
         }
     }
 
