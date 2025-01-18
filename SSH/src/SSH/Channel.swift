@@ -293,15 +293,14 @@ public extension SSH {
         return true
     }
 
+    /// Sets the blocking mode for the SSH channel.
+    ///
+    /// - Parameter blocking: A Boolean value that determines whether the channel should be in blocking mode.
+    ///   Pass `true` to set the channel to blocking mode, or `false` to set it to non-blocking mode.
     func channelBlocking(_ blocking: Bool) {
         if let rawChannel {
             libssh2_channel_set_blocking(rawChannel, blocking ? 1 : 0)
         }
-    }
-
-    func cancelSources() {
-        socketSource?.cancel()
-        socketSource = nil
     }
 
     /// Frees the SSH channel if it exists.

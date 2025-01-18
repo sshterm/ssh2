@@ -27,6 +27,7 @@ public extension SSH {
             addOperation {
                 channelDelegate?.connect(ssh: self, online: true)
             }
+            resumePoll()
             return true
         }
     }
@@ -87,21 +88,31 @@ public extension SSH {
     /// effectively pausing any polling or event handling that was being performed.
     /// Use this method when you need to temporarily stop processing events from the socket.
     func suspendPoll() {
-        socketSource?.suspend()
+        socketShell?.suspend()
     }
 
     /// Resumes the polling of the socket source if it is currently suspended.
-    /// This function checks if the `socketSource` is not nil and calls the `resume()`
+    /// This function checks if the `socketShell` is not nil and calls the `resume()`
     /// method on it to continue the polling process.
     func resumePoll() {
-        socketSource?.resume()
+        socketShell?.resume()
     }
 
+    /// Polls the SSH channel for incoming data and handles it accordingly.
+    ///
+    /// This function sets up a non-blocking read source on the socket file descriptor
+    /// and assigns event and cancel handlers to it. The event handler reads data from
+    /// the SSH channel and processes it using the provided callbacks. If an error occurs
+    /// or the read operation is complete, the shell is canceled. The cancel handler
+    /// notifies the delegate that the connection is offline and sends an EOF signal.
+    ///
+    /// - Note: This function assumes that `sockfd`, `queue`, `onData`, `isPol`, `isPolError`,
+    ///   `isRead`, `cancelShell`, `channelDelegate`, and `sendEOF` are defined elsewhere in the class.
     private func poll() {
         channelBlocking(false)
-        cancelSources()
-        socketSource = DispatchSource.makeReadSource(fileDescriptor: sockfd, queue: queue)
-        socketSource?.setEventHandler { [self] in
+        cancelShell()
+        socketShell = DispatchSource.makeReadSource(fileDescriptor: sockfd, queue: queue)
+        socketShell?.setEventHandler { [self] in
             let (rc, erc) = read(PipeOutputStream(callback: { data in
                 onData(data, true)
                 return isPol
@@ -111,23 +122,29 @@ public extension SSH {
             }))
             guard rc > 0 || erc > 0 else {
                 guard rc != LIBSSH2_ERROR_SOCKET_RECV || erc != LIBSSH2_ERROR_SOCKET_RECV else {
-                    cancelSources()
+                    cancelShell()
                     return
                 }
                 return
             }
             if !isRead {
-                cancelSources()
+                cancelShell()
                 return
             }
         }
-        socketSource?.setCancelHandler { [self] in
+        socketShell?.setCancelHandler { [self] in
+            if isRead {
+                sendEOF()
+            }
             channelDelegate?.connect(ssh: self, online: false)
-            sendEOF()
         }
-        socketSource?.resume()
     }
 
+    /// Handles incoming data from the SSH channel.
+    /// - Parameters:
+    ///   - data: The data received from the SSH channel.
+    ///   - stdout: A boolean indicating whether the data is from the standard output (true) or standard error (false).
+    /// - Note: If the data is not empty, it adds an operation to handle the data by calling the appropriate delegate method (`stdout` or `dtderr`).
     private func onData(_ data: Data, _ stdout: Bool) {
         guard data.count > 0 else {
             return
@@ -137,7 +154,18 @@ public extension SSH {
         }
     }
 
+    /// Cancels the current shell session by canceling the associated socket source and setting it to nil.
+    func cancelShell() {
+        socketShell?.cancel()
+        socketShell = nil
+    }
+
+    /// Closes the shell by canceling any active sources.
+    ///
+    /// This function is responsible for terminating the shell session
+    /// by invoking the `cancelShell` method, which cancels any
+    /// active sources associated with the shell.
     func closeShell() {
-        cancelSources()
+        cancelShell()
     }
 }

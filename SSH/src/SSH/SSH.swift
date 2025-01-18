@@ -53,7 +53,7 @@ public class SSH {
     var lockSSH2 = NSLock()
 
     let queue: DispatchQueue = .init(label: "SSH Queue", attributes: .concurrent)
-    var socketSource: DispatchSourceRead?
+    var socketShell: DispatchSourceRead?
 
     /// An `OperationQueue` instance used to manage and execute a collection of operations.
     /// This queue allows for the concurrent execution of multiple operations, providing
@@ -83,16 +83,31 @@ public class SSH {
         libssh2_init(0)
     }
 
+    /// Closes the SSH connection by performing the following steps:
+    /// 1. Shuts down the read side of the connection.
+    /// 2. Locks the `lockRow` to ensure thread safety.
+    /// 3. Frees any allocated resources.
+    /// 4. Shuts down both the read and write sides of the connection.
     public func close() {
         shutdown(.r)
         lockRow.lock()
         defer {
             lockRow.unlock()
         }
+        free()
+        shutdown(.rw)
+    }
+
+    /// Frees the resources associated with the SSH connection.
+    ///
+    /// This method releases the resources allocated for the SSH channel, SFTP session, and SSH session.
+    /// It should be called when the SSH connection is no longer needed to ensure proper cleanup.
+    ///
+    /// - Note: Ensure that no operations are being performed on the SSH connection before calling this method.
+    func free() {
         freeChannel()
         freeSFTP()
         freeSession()
-        shutdown(.rw)
     }
 
     /// Deinitializer for the SSH class.

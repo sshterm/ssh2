@@ -56,7 +56,7 @@ public extension SSH {
     func handshake() async -> Bool {
         await call { [self] in
             if let rawSession {
-                freeSession()
+                free()
             }
 
             let disconnect: disconnectType = { sess, reason, message, messageLen, language, languageLen, abstract in
@@ -75,18 +75,15 @@ public extension SSH {
             let recv: recvType = { socket, buffer, length, flags, abstract in
                 abstract.ssh.recv(socket: socket, buffer: buffer, length: length, flags: flags)
             }
-            #if DEBUG
-                let debug: debugType = { sess, reason, message, messageLen, language, languageLen, abstract in
-                    abstract.ssh.debug(sess: sess, reason: reason, message: message, messageLen: messageLen, language: language, languageLen: languageLen)
-                }
-            #endif
+            let debug: debugType = { sess, reason, message, messageLen, language, languageLen, abstract in
+                abstract.ssh.debug(sess: sess, reason: reason, message: message, messageLen: messageLen, language: language, languageLen: languageLen)
+            }
             rawSession = libssh2_session_init_ex(nil, nil, nil, Unmanaged.passUnretained(self).toOpaque())
-            #if DEBUG
-                libssh2_session_callback_set2(rawSession, LIBSSH2_CALLBACK_DEBUG, unsafeBitCast(debug, to: cbGenericType.self))
-            #endif
+
             for (key, value) in methods {
                 libssh2_session_method_pref(self.rawSession, key.value, value)
             }
+            libssh2_session_callback_set2(rawSession, LIBSSH2_CALLBACK_DEBUG, unsafeBitCast(debug, to: cbGenericType.self))
             libssh2_session_set_blocking(rawSession, 1)
             libssh2_trace(rawSession, trace.trace)
             libssh2_trace_sethandler(rawSession, nil, trac)

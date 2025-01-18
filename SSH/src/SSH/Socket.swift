@@ -123,7 +123,7 @@ public extension SSH {
     /// - Important: The `timeout` property is used to set the timeout value for
     ///   the `select` call.
     func waitsocket() -> Int32 {
-        guard let rawSession, sockfd != -1 else {
+        guard rawSession != nil, sockfd != -1 else {
             return -1
         }
 

@@ -5,7 +5,37 @@
 import Foundation
 import Network
 
-public enum DNSProvider: String, CaseIterable {
+public struct DNSConfiguration {
+    public let resolver: DNSProviderType
+    public let ips: [String]
+    public let host: String
+    public let port: NWEndpoint.Port
+
+    public init(resolver: DNSProviderType, ips: [String], host: String, port: NWEndpoint.Port) {
+        self.resolver = resolver
+        self.ips = ips
+        self.host = host
+        self.port = port
+    }
+
+    var configuration: NWParameters.PrivacyContext.ResolverConfiguration? {
+        switch resolver {
+        case .doh:
+            guard let url = URL(string: host) else {
+                return nil
+            }
+            return .https(url, serverAddresses: ips.map { NWEndpoint.hostPort(host: NWEndpoint.Host($0), port: port) })
+        case .dot:
+            return .tls(NWEndpoint.hostPort(host: NWEndpoint.Host(host), port: port), serverAddresses: ips.map { NWEndpoint.hostPort(host: NWEndpoint.Host($0), port: port) })
+        }
+    }
+}
+
+public enum DNSProviderType: String, CaseIterable {
+    case doh, dot
+}
+
+public enum PubDNS: String, CaseIterable {
     case alidns, adguard, google, cloudflare, quad9, s360 = "360", dnspod
 
     public var name: String {
@@ -117,35 +147,11 @@ public enum DNSProvider: String, CaseIterable {
         }
     }
 
-    var tlsPort: NWEndpoint.Port {
-        853
+    public var dohConfiguration: DNSConfiguration {
+        .init(resolver: .doh, ips: ips, host: url, port: 443)
     }
 
-    var httpsPort: NWEndpoint.Port {
-        443
+    public var dotConfiguration: DNSConfiguration {
+        .init(resolver: .doh, ips: ips, host: host, port: 853)
     }
-
-    func getServerAddresses(port: NWEndpoint.Port) -> [NWEndpoint] {
-        ips.map { NWEndpoint.hostPort(host: NWEndpoint.Host($0), port: port) }
-    }
-
-    var serverURL: URL {
-        URL(string: url)!
-    }
-
-    func getServerHost(port: NWEndpoint.Port) -> NWEndpoint {
-        NWEndpoint.hostPort(host: NWEndpoint.Host(host), port: port)
-    }
-
-    var https: NWParameters.PrivacyContext.ResolverConfiguration {
-        return .https(serverURL, serverAddresses: getServerAddresses(port: httpsPort))
-    }
-
-    var tls: NWParameters.PrivacyContext.ResolverConfiguration? {
-        return .tls(getServerHost(port: tlsPort), serverAddresses: getServerAddresses(port: tlsPort))
-    }
-}
-
-public enum DNSProviderType: String, CaseIterable {
-    case doh, dot
 }

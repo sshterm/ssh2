@@ -35,12 +35,10 @@ extension SSH {
     /// - Important: This function locks the SSH2 resource before executing the callback and unlocks it after the callback completes.
     func callSSH2<T>(_ wait: Bool = true, _ callback: @escaping () -> T) -> T where T: FixedWidthInteger {
         var ret: T
-        lockSSH2.lock()
-        defer {
-            lockSSH2.unlock()
-        }
         repeat {
+            lockSSH2.lock()
             ret = callback()
+            lockSSH2.unlock()
             guard wait, ret == LIBSSH2_ERROR_EAGAIN else { break }
             guard waitsocket() > 0 else { break }
         } while true
@@ -57,14 +55,13 @@ extension SSH {
     /// This function locks the SSH session before executing the callback and unlocks it afterward.
     /// If `wait` is `true`, it will handle `LIBSSH2_ERROR_EAGAIN` errors by waiting for the session to be ready.
     /// The function will repeat the callback execution until it succeeds or an error other than `E
+
     func callSSH2<T>(_ wait: Bool = true, _ callback: @escaping () -> T) -> T {
         var ret: T
-        lockSSH2.lock()
-        defer {
-            lockSSH2.unlock()
-        }
         repeat {
+            lockSSH2.lock()
             ret = callback()
+            lockSSH2.unlock()
             guard wait, rawSession != nil, libssh2_session_last_errno(rawSession) == LIBSSH2_ERROR_EAGAIN else { break }
             guard waitsocket() > 0 else { break }
         } while true
@@ -108,30 +105,29 @@ extension SSH {
         }
     }
 
-    #if DEBUG
-        /**
-         This function is a debug callback for an SSH session. It converts the provided message into a UTF-8 encoded string and passes it to the session delegate's debug method.
+    /**
+     This function is a debug callback for an SSH session. It converts the provided message into a UTF-8 encoded string and passes it to the session delegate's debug method.
 
-         - Parameters:
-            - sess: An unused parameter representing the SSH session.
-            - reason: An unused parameter representing the reason for the debug message.
-            - message: A pointer to the debug message.
-            - messageLen: The length of the debug message.
-            - language: An unused parameter representing the language of the debug message.
-            - languageLen: An unused parameter representing the length of the language string.
-         */
-        func debug(sess _: UnsafeRawPointer, reason _: CInt, message: UnsafePointer<CChar>, messageLen: CInt, language _: UnsafePointer<CChar>, languageLen _: CInt) {
-            guard let msg = Data(bytes: message, count: Int(messageLen)).string else {
-                return
-            }
-            #if DEBUG
-                print(msg)
-            #endif
-            addOperation {
-                await self.sessionDelegate?.debug(ssh: self, message: msg)
-            }
+     - Parameters:
+        - sess: An unused parameter representing the SSH session.
+        - reason: An unused parameter representing the reason for the debug message.
+        - message: A pointer to the debug message.
+        - messageLen: The length of the debug message.
+        - language: An unused parameter representing the language of the debug message.
+        - languageLen: An unused parameter representing the length of the language string.
+     */
+    func debug(sess _: UnsafeRawPointer, reason _: CInt, message: UnsafePointer<CChar>, messageLen: CInt, language _: UnsafePointer<CChar>, languageLen _: CInt) {
+        guard let msg = Data(bytes: message, count: Int(messageLen)).string else {
+            return
         }
-    #endif
+        #if DEBUG
+            print(msg)
+        #endif
+        addOperation {
+            await self.sessionDelegate?.debug(ssh: self, message: msg)
+        }
+    }
+
     /**
      Disconnects the SSH session.
 
@@ -144,11 +140,7 @@ extension SSH {
        - languageLen: The length of the language string.
      */
     func disconnect(sess _: UnsafeRawPointer, reason _: CInt, message: UnsafePointer<CChar>, messageLen: CInt, language _: UnsafePointer<CChar>, languageLen _: CInt) {
-        #if DEBUG
-            let msg = Data(bytes: message, count: Int(messageLen))
-            print("断开:\(msg)")
-        #endif
-        sessionDelegate?.disconnect(ssh: self)
-        close()
+        sessionDelegate?.disconnect(ssh: self, message: Data(bytes: message, count: Int(messageLen)))
+        free()
     }
 }
