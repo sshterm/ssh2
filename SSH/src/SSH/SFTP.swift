@@ -13,7 +13,8 @@ public extension SSH {
     ///
     /// - Returns: A boolean value indicating whether the SFTP session was successfully opened.
     func openSFTP() async -> Bool {
-        await call {
+        await call { [self] in
+            freeSFTP()
             let rawSFTP = self.callSSH2 {
                 libssh2_sftp_init(self.rawSession)
             }
@@ -381,6 +382,53 @@ public extension SSH {
                 }
             } while rc > 0
             return data
+        }
+    }
+
+    /// Uploads a local file to a remote location via SFTP.
+    ///
+    /// - Parameters:
+    ///   - local: The input stream of the local file to be uploaded.
+    ///   - remote: The remote file path where the file will be uploaded.
+    ///   - permissions: The file permissions to set on the remote file. Defaults to `.default`.
+    ///   - progress: A closure that is called with the number of bytes sent. Returns a boolean indicating whether to continue the upload.
+    ///
+    /// - Returns: A boolean indicating whether the upload was successful.
+    func upload(local: InputStream, remote: String, permissions: FilePermissions = .default, progress: @escaping (_ send: Int) -> Bool) async -> Bool {
+        await call { [self] in
+            guard let rawSession else {
+                return false
+            }
+            let remote = SFTPOutputStream(ssh: self, remotePath: remote, permissions: permissions)
+            guard io.Copy(local, remote, buffer, { send in
+                progress(send)
+            }) >= 0 else {
+                return false
+            }
+            return true
+        }
+    }
+
+    /// Downloads a file from a remote path to a local output stream with progress tracking.
+    ///
+    /// - Parameters:
+    ///   - remote: The remote file path to download from.
+    ///   - local: The local `OutputStream` to write the downloaded data to.
+    ///   - progress: A closure that is called with the number of bytes sent and the total size of the remote file.
+    ///               The closure should return `true` to continue the download or `false` to cancel it.
+    /// - Returns: A boolean value indicating whether the download was successful.
+    func download(remote: String, local: OutputStream, progress: @escaping (_ send: Int, _ size: Int) -> Bool) async -> Bool {
+        await call { [self] in
+            guard let rawSession else {
+                return false
+            }
+            let remote = SFTPInputStream(ssh: self, remotePath: remote)
+            guard io.Copy(remote, local, buffer, { send in
+                progress(send, remote.size)
+            }) == remote.size else {
+                return false
+            }
+            return true
         }
     }
 

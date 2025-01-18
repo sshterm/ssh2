@@ -130,6 +130,26 @@ public extension SockFD {
         return size
     }
 
+    /// Reads data into the provided buffer.
+    ///
+    /// - Parameters:
+    ///   - buffer: A pointer to the buffer where the read data will be stored.
+    ///   - len: The maximum number of bytes to read.
+    /// - Returns: The number of bytes actually read, or a negative value if an error occurred.
+    func read(_ buffer: UnsafeMutableRawPointer, _ len: Int) -> Int {
+        Darwin.read(self, buffer, len)
+    }
+
+    /// Writes data from the provided buffer to the socket.
+    ///
+    /// - Parameters:
+    ///   - buffer: A pointer to the data to be written.
+    ///   - len: The number of bytes to write from the buffer.
+    /// - Returns: The number of bytes that were written, or a negative value if an error occurred.
+    func write(_ buffer: UnsafeRawPointer, _ len: Int) -> Int {
+        Darwin.write(self, buffer, len)
+    }
+
     /// Closes the socket file descriptor.
     ///
     /// This function wraps the `Darwin.close` function to close the socket file descriptor

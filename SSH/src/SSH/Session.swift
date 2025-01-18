@@ -28,13 +28,13 @@ public extension SSH {
                 return false
             }
             c.append([0x0D, 0x0A], count: 2)
-            guard sockfd.send(c.bytes, c.count) == c.count else {
+            guard sockfd.write(c.bytes, c.count) == c.count else {
                 return false
             }
             let buf: Buffer<UInt8> = .init(1)
             var data = Data()
             for _ in 0 ... 3 {
-                guard sockfd.recv(buf.buffer, 1) == 1 else {
+                guard sockfd.read(buf.buffer, 1) == 1 else {
                     return false
                 }
                 data.append(buf.buffer, count: 1)
