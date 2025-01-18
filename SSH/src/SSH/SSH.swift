@@ -10,7 +10,7 @@ public class SSH {
     ///
     /// This constant holds the version number of the SSH library as a string.
     /// It can be used to check the version of the library being used in the project.
-    public static let version = "0.0.1"
+    public static let version = "7.0.0"
 
     /// A constant representing the version of the libssh2 library being used.
     /// This value is defined by the `LIBSSH2_VERSION` macro.
@@ -41,7 +41,7 @@ public class SSH {
     public var algorithm: ShaAlgorithm = .sha1
 
     /// A string representing the banner message for the SSH session.
-    public var banner = "SSH-2.0-libssh2_\(LIBSSH2_VERSION)-ssh2.app"
+    public var banner = ""
 
     /// The delegate responsible for handling session-related events.
     public var sessionDelegate: SessionDelegate?

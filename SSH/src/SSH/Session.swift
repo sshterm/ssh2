@@ -24,7 +24,7 @@ public extension SSH {
             shutdown()
         }
         return await call { [self] in
-            guard var c = "SSH-2.0-SSH2.app".data(using: .ascii) else {
+            guard var c = clientbanner.data(using: .ascii) else {
                 return false
             }
             c.append([0x0D, 0x0A], count: 2)
@@ -183,7 +183,7 @@ public extension SSH {
     /// Otherwise, it returns a default banner string in the format "SSH-2.0-libssh2_<LIBSSH2_VERSION>-ssh2.app".
     /// - Note: `LIBSSH2_VERSION` is a placeholder for the actual version of libssh2 being used.
     var clientbanner: String {
-        banner.hasPrefix("SSH-") ? banner.trim : "SSH-2.0-libssh2_\(LIBSSH2_VERSION)-ssh2.app"
+        banner.hasPrefix("SSH-") ? banner.trim : "SSH-2.0-libssh2_\(LIBSSH2_VERSION)-ssh2.app_\(Self.version)"
     }
 
     /// A computed property that checks if the SSH session is using compression.
