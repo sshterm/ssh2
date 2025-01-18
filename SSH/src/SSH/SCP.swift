@@ -14,7 +14,7 @@ public extension SSH {
     ///   - permissions: The file permissions to be set on the remote file. Defaults to `.default`.
     ///   - progress: A closure that is called with the number of bytes sent. Returns a `Bool` indicating whether to continue sending.
     /// - Returns: A `Bool` indicating whether the file was successfully sent.
-    func send(local: String, remote: String, permissions: FilePermissions = .default, progress: @escaping (_ send: Int) -> Bool) async -> Bool {
+    func send(local: String, remote: String, permissions: FilePermissions = .default, progress: @escaping (_ send: Int) -> Bool = { _ in true }) async -> Bool {
         await call { [self] in
             guard let stream = InputStream(fileAtPath: local) else {
                 return false
@@ -40,7 +40,7 @@ public extension SSH {
     ///   - progress: A closure that is called with the number of bytes sent and the total size of the file.
     ///               Returns `true` to continue the transfer, or `false` to cancel it.
     /// - Returns: A Boolean value indicating whether the file was successfully received.
-    func recv(remote: String, local: String, progress: @escaping (_ send: Int, _ size: Int) -> Bool) async -> Bool {
+    func recv(remote: String, local: String, progress: @escaping (_ send: Int, _ size: Int) -> Bool = { _, _ in true }) async -> Bool {
         await call { [self] in
             guard let stream = OutputStream(toFileAtPath: local, append: false) else {
                 return false

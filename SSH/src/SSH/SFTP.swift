@@ -397,7 +397,7 @@ public extension SSH {
     ///   - progress: A closure that is called with the number of bytes sent. Returns a boolean indicating whether to continue the upload.
     ///
     /// - Returns: A boolean indicating whether the upload was successful.
-    func upload(local: Data, remote: String, permissions: FilePermissions = .default, progress: @escaping (_ send: Int) -> Bool) async -> Bool {
+    func upload(local: Data, remote: String, permissions: FilePermissions = .default, progress: @escaping (_ send: Int) -> Bool = { _ in true }) async -> Bool {
         await upload(local: InputStream(data: local), remote: remote, permissions: permissions, progress: progress)
     }
 
@@ -410,7 +410,7 @@ public extension SSH {
     ///   - progress: A closure that is called with the number of bytes sent. Returns a boolean indicating whether to continue the upload.
     ///
     /// - Returns: A boolean indicating whether the upload was successful.
-    func upload(local: String, remote: String, permissions: FilePermissions = .default, progress: @escaping (_ send: Int) -> Bool) async -> Bool {
+    func upload(local: String, remote: String, permissions: FilePermissions = .default, progress: @escaping (_ send: Int) -> Bool = { _ in true }) async -> Bool {
         guard let stream = InputStream(fileAtPath: local) else {
             return false
         }
@@ -427,7 +427,7 @@ public extension SSH {
     ///               indicating whether the download should continue.
     ///
     /// - Returns: The data of the downloaded file, or `nil` if the download failed.
-    func download(remote: String, progress: @escaping (_ send: Int, _ size: Int) -> Bool) async -> Data? {
+    func download(remote: String, progress: @escaping (_ send: Int, _ size: Int) -> Bool = { _, _ in true }) async -> Data? {
         let stream = OutputStream.toMemory()
         guard await download(remote: remote, local: stream, progress: progress) else {
             return nil
@@ -445,7 +445,7 @@ public extension SSH {
     ///     - size: The total size of the file being downloaded.
     ///     - Returns: A Boolean value indicating whether the download should continue.
     /// - Returns: A Boolean value indicating whether the download was successful.
-    func download(remote: String, local: String, progress: @escaping (_ send: Int, _ size: Int) -> Bool) async -> Bool {
+    func download(remote: String, local: String, progress: @escaping (_ send: Int, _ size: Int) -> Bool = { _, _ in true }) async -> Bool {
         guard let stream = OutputStream(toFileAtPath: local, append: false) else {
             return false
         }
@@ -461,7 +461,7 @@ public extension SSH {
     ///   - progress: A closure that is called with the number of bytes sent. Returns a boolean indicating whether to continue the upload.
     ///
     /// - Returns: A boolean indicating whether the upload was successful.
-    func upload(local: InputStream, remote: String, permissions: FilePermissions = .default, progress: @escaping (_ send: Int) -> Bool) async -> Bool {
+    func upload(local: InputStream, remote: String, permissions: FilePermissions = .default, progress: @escaping (_ send: Int) -> Bool = { _ in true }) async -> Bool {
         await call { [self] in
             let remote = SFTPOutputStream(ssh: self, remotePath: remote, permissions: permissions)
             guard io.Copy(local, remote, buffer, { send in
@@ -481,7 +481,7 @@ public extension SSH {
     ///   - progress: A closure that is called with the number of bytes sent and the total size of the remote file.
     ///               The closure should return `true` to continue the download or `false` to cancel it.
     /// - Returns: A boolean value indicating whether the download was successful.
-    func download(remote: String, local: OutputStream, progress: @escaping (_ send: Int, _ size: Int) -> Bool) async -> Bool {
+    func download(remote: String, local: OutputStream, progress: @escaping (_ send: Int, _ size: Int) -> Bool = { _, _ in true }) async -> Bool {
         await call { [self] in
             let remote = SFTPInputStream(ssh: self, remotePath: remote)
             guard io.Copy(remote, local, buffer, { send in
