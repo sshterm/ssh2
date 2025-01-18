@@ -21,17 +21,9 @@ let package = Package(
     targets: [
         .target(
             name: "SSH",
-            dependencies: [.product(name: "CSSH", package: "cssh"), "SSHKey"],
-            path: "SSH/src",
-            linkerSettings: [
-                .linkedLibrary("z"),
-            ]
-        ),
-        .target(
-            name: "SSHKey",
-            dependencies: [.product(name: "CSSH", package: "cssh")],
-            path: "SSHKey/src"
-        ),
+            dependencies: [.product(name: "CSSH", package: "CSSH"),.product(name: "SSHKey", package: "CSSH")],
+            path: "SSH/src"
+        )
     ],
     swiftLanguageVersions: [.v5]
 )
