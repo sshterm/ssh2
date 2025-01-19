@@ -15,8 +15,8 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(name: "CSSH", path: "~/project/github/cssh"),
-        // .package(url: "https://github.com/sshterm/cssh.git", branch: "main"),
+        // .package(name: "CSSH", path: "~/project/github/cssh"),
+        .package(url: "https://github.com/sshterm/cssh.git", branch: "main"),
     ],
     targets: [
         .target(
