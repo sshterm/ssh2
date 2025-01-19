@@ -1,6 +1,6 @@
 // Protocol.swift
 // Copyright (c) 2025 ssh2.app
-// Created by admin@ssh2.app 2024/8/21.
+// Created by admin@ssh2.app 2025/1/19.
 
 import Foundation
 
@@ -12,12 +12,13 @@ public protocol SessionDelegate {
     ///   - message: An optional data message to be sent before disconnecting.
     func disconnect(ssh: SSH, message: Data)
 
-    /// Called when the SSH session is connected.
+    /// Establishes a connection to the SSH server using the provided public key.
+    ///
     /// - Parameters:
-    ///   - ssh: The SSH session instance.
-    ///   - fingerprint: The fingerprint of the SSH server.
-    /// - Returns: A Boolean value indicating whether the connection is successful.
-    func connect(ssh: SSH, fingerprint: String) -> Bool
+    ///   - ssh: An instance of the `SSH` class representing the SSH connection.
+    ///   - pubkey: The public key of the server.
+    /// - Returns: A boolean value indicating whether the connection was accepted.
+    func connect(ssh: SSH, pubkey: Hostkey) -> Bool
 
     /// Called when a keyboard-interactive authentication prompt is received.
     /// - Parameters:
