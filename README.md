@@ -11,5 +11,5 @@ The Swift Package Manager is a tool for automating the distribution of Swift cod
 ```
 
 ```swift
-.product(name: "SSH", package: "ssh2")
+.product(name: "SSH", package: "SSH")
 ```

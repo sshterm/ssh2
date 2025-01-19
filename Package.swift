@@ -23,6 +23,5 @@ let package = Package(
             dependencies: [.product(name: "CSSH", package: "CSSH"),.product(name: "SSHKey", package: "CSSH")],
             path: "SSH/src"
         )
-    ],
-    swiftLanguageVersions: [.v5]
+    ]
 )
