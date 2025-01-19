@@ -1,9 +1,9 @@
 // Crypto.swift
 // Copyright (c) 2025 ssh2.app
-// Created by admin@ssh2.app 2025/1/16.
+// Created by admin@ssh2.app 2025/1/19.
 
-import CSSH
 import Foundation
+import OpenSSL
 
 public class Crypto {
     /// A singleton instance of the `Crypto` class.

@@ -20,7 +20,7 @@ let package = Package(
     targets: [
         .target(
             name: "SSH",
-            dependencies: [.product(name: "CSSH", package: "CSSH"),.product(name: "SSHKey", package: "CSSH")]
-        )
+            dependencies: [.product(name: "CSSH", package: "CSSH"), .product(name: "SSHKey", package: "CSSH"), .product(name: "OpenSSL", package: "CSSH")]
+        ),
     ]
 )
