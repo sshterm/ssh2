@@ -3,7 +3,11 @@
 // Created by admin@ssh2.app 2025/1/19.
 
 import Foundation
-import OpenSSL
+#if HAVE_OPENSSL
+    import OpenSSL
+#else
+    import wolfSSL
+#endif
 
 public extension Crypto {
     /// Computes the SHA hash of the given message using the specified algorithm.
@@ -41,11 +45,19 @@ public extension Crypto {
     func sha(_ message: UnsafeRawPointer, message_len: Int, algorithm: ShaAlgorithm) -> Data {
         let evp = algorithm.EVP
         let buf: BufferData<Int8, UInt32> = .init(algorithm.digest)
-        let mdctx = EVP_MD_CTX_new()
-        EVP_DigestInit(mdctx, evp)
-        EVP_DigestUpdate(mdctx, message, message_len)
-        EVP_DigestFinal_ex(mdctx, buf.buf.buffer, buf.len.buffer)
-        EVP_MD_CTX_free(mdctx)
+        #if HAVE_OPENSSL
+            let mdctx = EVP_MD_CTX_new()
+            EVP_DigestInit(mdctx, evp)
+            EVP_DigestUpdate(mdctx, message, message_len)
+            EVP_DigestFinal_ex(mdctx, buf.buf.buffer, buf.len.buffer)
+            EVP_MD_CTX_free(mdctx)
+        #else
+            let mdctx = wolfSSL_EVP_MD_CTX_new()
+            wolfSSL_EVP_DigestInit(mdctx, evp)
+            wolfSSL_EVP_DigestUpdate(mdctx, message, message_len)
+            wolfSSL_EVP_DigestFinal_ex(mdctx, buf.buf.buffer, buf.len.buffer)
+            wolfSSL_EVP_MD_CTX_free(mdctx)
+        #endif
         return buf.data
     }
 }

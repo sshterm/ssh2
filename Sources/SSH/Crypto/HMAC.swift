@@ -3,7 +3,11 @@
 // Created by admin@ssh2.app 2025/1/19.
 
 import Foundation
-import OpenSSL
+#if HAVE_OPENSSL
+    import OpenSSL
+#else
+    import wolfSSL
+#endif
 
 public extension Crypto {
     /// Generates an HMAC (Hash-based Message Authentication Code) for a given message using the specified key and algorithm.
@@ -39,9 +43,13 @@ public extension Crypto {
     /// - Returns: A `Data` object containing the computed HMAC.
     func hmac(_ message: UnsafeRawPointer, message_len: Int, key: UnsafeRawPointer, key_len: Int32, algorithm: ShaAlgorithm) -> Data {
         let evp = algorithm.EVP
-        let digest = EVP_MD_get_size(evp)
-        let buf: BufferData<Int8, UInt32> = .init(algorithm.digest)
-        HMAC(evp, key, key_len, message, message_len, buf.buf.buffer, buf.len.buffer)
+        let digest = algorithm.digest
+        let buf: BufferData<Int8, UInt32> = .init(digest)
+        #if HAVE_OPENSSL
+            HMAC(evp, key, key_len, message, message_len, buf.buf.buffer, buf.len.buffer)
+        #else
+            wolfSSL_HMAC(evp, key, key_len, message, message_len, buf.buf.buffer, buf.len.buffer)
+        #endif
         return buf.data
     }
 }

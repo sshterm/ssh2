@@ -25,7 +25,8 @@ let package = Package(
     targets: [
         .target(
             name: "SSH",
-            dependencies: [.product(name: "CSSH", package: "CSSH"), .product(name: "SSHKey", package: "CSSH"), .product(name: "OpenSSL", package: "CSSH"), .product(name: "MaxMindDB", package: "CSSH")]
+            dependencies: [.product(name: "CSSH", package: "CSSH"), .product(name: "SSHKey", package: "CSSH"), .product(name: "OpenSSL", package: "CSSH"), .product(name: "MaxMindDB", package: "CSSH")],
+            swiftSettings: [.define("HAVE_OPENSSL")]
         ),
         .target(
             name: "GeoLite2",
