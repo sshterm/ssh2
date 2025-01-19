@@ -56,9 +56,9 @@ public extension SSH {
             guard let rawSFTP else {
                 return nil
             }
-            let buf: Buffer<CChar> = .init()
+            let buf: Buffer<CChar> = .init(PATH_MAX.load())
             let rc = callSSH2 {
-                libssh2_sftp_symlink_ex(rawSFTP, path, path.count.load(), buf.buffer, buffer.load(), LIBSSH2_SFTP_READLINK)
+                libssh2_sftp_symlink_ex(rawSFTP, path, path.count.load(), buf.buffer, buf.capacity.load(), LIBSSH2_SFTP_READLINK)
             }
             guard rc > 0 else {
                 return nil
@@ -81,9 +81,9 @@ public extension SSH {
             guard let rawSFTP else {
                 return nil
             }
-            let buf: Buffer<CChar> = .init()
+            let buf: Buffer<CChar> = .init(PATH_MAX.load())
             let rc = callSSH2 {
-                libssh2_sftp_symlink_ex(rawSFTP, path, path.count.load(), buf.buffer, buffer.load(), LIBSSH2_SFTP_REALPATH)
+                libssh2_sftp_symlink_ex(rawSFTP, path, path.count.load(), buf.buffer, buf.capacity.load(), LIBSSH2_SFTP_REALPATH)
             }
             guard rc > 0 else {
                 return nil
@@ -372,10 +372,10 @@ public extension SSH {
             var attrs = LIBSSH2_SFTP_ATTRIBUTES()
             repeat {
                 rc = callSSH2 {
-                    libssh2_sftp_readdir_ex(handle, buffer.buffer, maxLen, longEntry.buffer, maxLen, &attrs)
+                    libssh2_sftp_readdir_ex(handle, buffer.buffer, buffer.capacity, longEntry.buffer, longEntry.capacity, &attrs)
                 }
                 if rc > 0 {
-                    guard let name = buffer.data.string,!ignoredFiles.contains(name) else {
+                    guard let name = buffer.data.string,!ignoredfiles.contains(name) else {
                         continue
                     }
                     guard let longname = longEntry.data.string else {
@@ -464,7 +464,7 @@ public extension SSH {
     func upload(local: InputStream, remote: String, permissions: FilePermissions = .default, progress: @escaping (_ send: Int) -> Bool = { _ in true }) async -> Bool {
         await call { [self] in
             let remote = SFTPOutputStream(ssh: self, remotePath: remote, permissions: permissions)
-            guard io.Copy(local, remote, buffer, { send in
+            guard io.Copy(local, remote, bufferSize, { send in
                 progress(send)
             }) >= 0 else {
                 return false
@@ -484,7 +484,7 @@ public extension SSH {
     func download(remote: String, local: OutputStream, progress: @escaping (_ send: Int, _ size: Int) -> Bool = { _, _ in true }) async -> Bool {
         await call { [self] in
             let remote = SFTPInputStream(ssh: self, remotePath: remote)
-            guard io.Copy(remote, local, buffer, { send in
+            guard io.Copy(remote, local, bufferSize, { send in
                 progress(send, remote.size)
             }) == remote.size else {
                 return false

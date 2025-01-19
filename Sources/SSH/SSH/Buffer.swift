@@ -20,11 +20,19 @@ class Buffer<T> {
     ///         Use with caution as improper use can lead to undefined behavior or memory leaks.
     let buffer: UnsafeMutablePointer<T>
 
-    /// Initializes a new buffer with the specified capacity.
+    /// The capacity of the buffer.
+    /// This property represents the maximum number of elements that the buffer can hold.
+    var capacity: Int
+
+    /// Initializes a buffer with the specified capacity.
     ///
-    /// - Parameter capacity: The number of elements to allocate space for. Defaults to 0.
-    init(_ capacity: Int = 0) {
+    /// - Parameter capacity: The number of elements to allocate space for.
+    ///   Defaults to the size of the type `T`.
+    ///
+    /// - Note: The buffer is allocated using `UnsafeMutablePointer<T>.allocate`.
+    init(_ capacity: Int = MemoryLayout<T>.size) {
         buffer = UnsafeMutablePointer<T>.allocate(capacity: capacity)
+        self.capacity = capacity
     }
 
     /// Returns a `Data` object containing the specified number of bytes from the buffer.
@@ -57,5 +65,35 @@ class Buffer<T> {
 
     deinit {
         buffer.deallocate()
+    }
+}
+
+/// A generic structure that holds two buffers: one for length and one for data.
+///
+/// - Parameters:
+///   - V: The type of data stored in the data buffer.
+///   - L: The type of data stored in the length buffer.
+struct BufferData<V, L> where L: FixedWidthInteger {
+    /// A buffer of type `Buffer<L>` initialized with default values.
+    /// This buffer is used to store data of type `L`.
+    let len: Buffer<L> = .init()
+
+    /// A buffer that holds data of type `V`.
+    ///
+    /// - Note: This buffer is part of the SSH Term v7 project and is located in the `Crypto` module.
+    let buf: Buffer<V>
+
+    /// Initializes a new instance of the buffer with the specified capacity.
+    ///
+    /// - Parameter capacity: The capacity of the buffer.
+    init(_ capacity: Int) {
+        buf = Buffer<V>(capacity)
+    }
+
+    /// A computed property that returns a `Data` object initialized with the bytes from the buffer.
+    /// The length of the data is determined by loading the value from the `len` address.
+    /// - Returns: A `Data` object containing the bytes from the buffer.
+    var data: Data {
+        return Data(bytes: buf.buffer, count: len.address.load())
     }
 }

@@ -84,7 +84,7 @@ public extension SSH {
                 libssh2_session_method_pref(self.rawSession, key.value, value)
             }
             libssh2_session_callback_set2(rawSession, LIBSSH2_CALLBACK_DEBUG, unsafeBitCast(debug, to: cbGenericType.self))
-            libssh2_session_set_blocking(rawSession, 1)
+            libssh2_session_set_blocking(rawSession, blocking ? 1 : 0)
             libssh2_trace(rawSession, trace.trace)
             libssh2_trace_sethandler(rawSession, nil, trac)
             libssh2_session_callback_set2(rawSession, LIBSSH2_CALLBACK_DISCONNECT, unsafeBitCast(disconnect, to: cbGenericType.self))
@@ -109,6 +109,103 @@ public extension SSH {
 
             return true
         }
+    }
+
+    /// Starts the keepalive mechanism for the SSH session.
+    ///
+    /// This function configures the keepalive settings for the SSH session and sets up a timer to periodically send keepalive messages to the server.
+    /// If the session is not authenticated or the keepalive settings are not properly configured, the function will return early without setting up the keepalive mechanism.
+    ///
+    /// The keepalive timer is scheduled to fire at the interval specified by `keepaliveInterval`. When the timer fires, the `sendKeepalive` function is called to send a keepalive message to the server.
+    ///
+    /// The function also sets up a cancel handler for the timer, which prints a debug message when the keepalive mechanism is stopped.
+    ///
+    /// - Note: This function should only be called after the SSH session has been successfully authenticated.
+    func startKeepalive() {
+        guard let rawSession, keepalive, isAuthenticated else {
+            return
+        }
+        libssh2_keepalive_config(rawSession, 1, UInt32(keepaliveInterval))
+        cancelKeepalive()
+        keepAliveSource = DispatchSource.makeTimerSource(queue: .global(qos: .background))
+
+        guard let keepAliveSource else {
+            return
+        }
+        keepAliveSource.schedule(deadline: DispatchTime.now() + .seconds(keepaliveInterval), repeating: .seconds(keepaliveInterval), leeway: .seconds(keepaliveInterval))
+
+        keepAliveSource.setEventHandler {
+            self.sendKeepalive()
+        }
+        keepAliveSource.setCancelHandler {
+            #if DEBUG
+                print("心跳机制退出")
+            #endif
+        }
+        keepAliveSource.resume()
+    }
+
+    /// Cancels the keep-alive mechanism for the SSH session.
+    ///
+    /// This method cancels the keep-alive dispatch source if it exists and sets it to nil.
+    /// It should be called when the keep-alive mechanism is no longer needed or before
+    /// the session is terminated to clean up resources.
+    func cancelKeepalive() {
+        keepAliveSource?.cancel()
+        keepAliveSource = nil
+    }
+
+    /// Suspends the keep-alive mechanism for the SSH session.
+    ///
+    /// This function suspends the keep-alive source, which is responsible for
+    /// sending periodic keep-alive messages to maintain the connection.
+    /// Use this function when you want to temporarily stop sending keep-alive
+    /// messages, for example, during a period of inactivity.
+    func suspendKeepalive() {
+        keepAliveSource?.suspend()
+    }
+
+    /// Resumes the keep-alive source if it is currently suspended.
+    /// This function is used to ensure that the keep-alive mechanism
+    /// continues to operate, preventing the session from timing out
+    /// due to inactivity.
+    func resumeKeepalive() {
+        keepAliveSource?.resume()
+    }
+
+    /// Sends a keepalive message to the SSH server to maintain the session.
+    ///
+    /// This function suspends the keepalive timer, sends a keepalive message,
+    /// and then resumes the keepalive timer. If the session is not available,
+    /// it resumes the keepalive timer and returns immediately. If the keepalive
+    /// message fails to send due to a socket send error, it resumes the keepalive
+    /// timer and returns.
+    ///
+    /// - Note: In debug mode, it prints the number of seconds until the next
+    /// keepalive message is sent.
+    ///
+    /// - Important: This function assumes that `rawSession` is a valid pointer
+    /// to an active SSH session.
+    private func sendKeepalive() {
+        suspendKeepalive()
+        defer {
+            resumeKeepalive()
+        }
+        guard let rawSession else {
+            resumeKeepalive()
+            return
+        }
+        let seconds: Buffer<Int32> = .init()
+        let rc = libssh2_keepalive_send(rawSession, seconds.buffer)
+        guard rc == LIBSSH2_ERROR_NONE else {
+            if rc == LIBSSH2_ERROR_SOCKET_SEND {
+                resumeKeepalive()
+            }
+            return
+        }
+        #if DEBUG
+            print("心跳秒", seconds.pointee)
+        #endif
     }
 
     /// A computed property that manages the blocking mode of the SSH session.
@@ -211,12 +308,25 @@ public extension SSH {
         return methods.string
     }
 
+    /// A computed property that returns the buffer size.
+    /// If the `buffersize` exceeds the maximum value of `Int` (0x7FFF_FFFF),
+    /// it returns the maximum value. Otherwise, it returns the actual `buffersize`.
+    ///
+    /// - Returns: The buffer size as an `Int`.
+    var bufferSize: Int {
+        if buffersize > 0x7FFF_FFFF {
+            return 0x7FFF_FFFF
+        }
+        return buffersize
+    }
+
     /// Frees the current SSH session.
     ///
     /// This method releases the resources associated with the current SSH session
     /// by calling `libssh2_session_free` on the `rawSession` if it exists, and then
     /// sets `rawSession` to `nil`.
     func freeSession() {
+        cancelKeepalive()
         if let rawSession {
             if isConnected {
                 libssh2_session_disconnect_ex(rawSession, SSH_DISCONNECT_BY_APPLICATION, "Bye-Bye", "")

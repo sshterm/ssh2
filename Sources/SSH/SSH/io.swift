@@ -40,11 +40,12 @@ public class io {
             w.close()
             r.close()
         }
+
         let buffer: Buffer<CChar> = .init(bufferSize)
         var total = 0
         var nread, rc: Int
         while r.hasBytesAvailable {
-            nread = r.read(buffer.buffer, maxLength: bufferSize)
+            nread = r.read(buffer.buffer, maxLength: buffer.capacity)
             guard nread >= 0 else {
                 return nread
             }

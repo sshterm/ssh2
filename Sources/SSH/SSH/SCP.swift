@@ -23,7 +23,7 @@ public extension SSH {
                 return false
             }
             let remote = SCPOutputStream(ssh: self, remotePath: remote, permissions: permissions, size: size)
-            guard io.Copy(stream, remote, buffer, { send in
+            guard io.Copy(stream, remote, bufferSize, { send in
                 progress(send)
             }) >= 0 else {
                 return false
@@ -46,7 +46,7 @@ public extension SSH {
                 return false
             }
             let remote = SCPInputStream(ssh: self, remotePath: remote)
-            guard io.Copy(remote, stream, buffer, { send in
+            guard io.Copy(remote, stream, bufferSize, { send in
                 progress(send, remote.size)
             }) == remote.size else {
                 return false

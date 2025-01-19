@@ -141,9 +141,9 @@ public extension SSH {
             return nil
         }
         return await call { [self] in
-            let buf: Buffer<UInt8> = .init(buffer)
+            let buf: Buffer<UInt8> = .init(bufferSize)
             let count = callSSH2(wait) {
-                libssh2_channel_read_ex(rawChannel, stderr ? SSH_EXTENDED_DATA_STDERR : 0, buf.buffer, buffer)
+                libssh2_channel_read_ex(rawChannel, stderr ? SSH_EXTENDED_DATA_STDERR : 0, buf.buffer, buf.capacity)
             }
             guard count >= 0 else {
                 return nil
@@ -164,7 +164,7 @@ public extension SSH {
             return -1
         }
         let rc = callSSH2(wait) { [self] in
-            return io.Copy(output, ChannelInputStream(handle: rawChannel, err: err), buffer)
+            return io.Copy(output, ChannelInputStream(handle: rawChannel, err: err), bufferSize)
         }
         return rc
     }

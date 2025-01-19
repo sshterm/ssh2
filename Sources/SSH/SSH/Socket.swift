@@ -106,48 +106,28 @@ public extension SSH {
         }
     }
 
-    /// Waits for the socket to be ready for reading or writing.
+    /// Waits for the socket to be ready for reading or writing based on the session's block directions.
     ///
-    /// This function uses the `select` system call to wait for the socket to be
-    /// ready for reading or writing, based on the directions indicated by the
-    /// libssh2 session.
+    /// This function uses the `poll` system call to wait for the socket to be ready for reading or writing.
+    /// It checks the session's block directions to determine the events to wait for.
     ///
-    /// - Returns: An `Int32` value indicating the result of the `select` call.
-    ///   - `0` if the timeout expired and no file descriptors were ready.
-    ///   - A positive value indicating the number of file descriptors that are ready.
-    ///   - `-1` if an error occurred.
-    ///
-    /// - Note: This function assumes that `rawSession` and `sockfd` are valid.
-    ///   If `rawSession` is `nil` or `sockfd` is `-1`, the function returns `-1`.
-    ///
-    /// - Important: The `timeout` property is used to set the timeout value for
-    ///   the `select` call.
+    /// - Returns: An `Int32` value indicating the result of the `poll` call:
+    ///   - `-1` if the session or socket file descriptor is invalid.
+    ///   - The result of the `poll` call otherwise.
     func waitsocket() -> Int32 {
         guard rawSession != nil, sockfd != -1 else {
             return -1
         }
-
-        var timeout = timeval(tv_sec: 1, tv_usec: 0)
-
-        var fdSet = fd_set()
-        var readFd = fd_set()
-        var writeFd = fd_set()
-        fdSet.zero()
-        fdSet.set(sockfd)
-        readFd.zero()
-        writeFd.zero()
-
+        var sockets = [pollfd(fd: sockfd, events: 0, revents: 0)]
         let dir = libssh2_session_block_directions(rawSession)
-
-        if (dir & LIBSSH2_SESSION_BLOCK_INBOUND) != 0 {
-            readFd = fdSet
+        if dir & LIBSSH2_SESSION_BLOCK_INBOUND != 0 {
+            sockets[0].events |= Int16(POLLIN)
         }
 
-        if (dir & LIBSSH2_SESSION_BLOCK_OUTBOUND) != 0 {
-            writeFd = fdSet
+        if dir & LIBSSH2_SESSION_BLOCK_OUTBOUND != 0 {
+            sockets[0].events |= Int16(POLLOUT)
         }
-
-        let rc = select(sockfd + 1, &readFd, &writeFd, nil, &timeout)
+        let rc = poll(&sockets, 1, Int32(timeout * 1000))
         #if DEBUG
             print("阻塞:\(rc) 方向: \(dir)")
         #endif

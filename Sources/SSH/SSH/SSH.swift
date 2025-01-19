@@ -16,9 +16,15 @@ public class SSH {
     /// This value is defined by the `LIBSSH2_VERSION` macro.
     public static let libssh2_version = LIBSSH2_VERSION
 
-    public var buffer = 0x4000
+    /// The size of the buffer used for SSH operations.
+    /// 
+    /// This property defines the size of the buffer in bytes. The default value is set to 0x4000 (16384 bytes).
+    public var buffersize = 0x4000
 
-    public var ignoredFiles = [".", ".."]
+    /// An array of filenames that should be ignored.
+    /// 
+    /// This array contains the default filenames `"."` and `".."` which are typically used to represent the current directory and the parent directory, respectively.
+    public var ignoredfiles = [".", ".."]
 
     /// A public variable representing the socket file descriptor.
     /// It is initialized to `-1`.
@@ -43,6 +49,27 @@ public class SSH {
     /// A string representing the banner message for the SSH session.
     public var banner = ""
 
+    /// The interval in seconds for sending keepalive messages to maintain the SSH connection.
+    ///
+    /// This property specifies how frequently the client should send keepalive messages to the server
+    /// to ensure that the connection remains active. A value of 5 means that a keepalive message will
+    /// be sent every 5 seconds.
+    public var keepaliveInterval = 5
+    /// A Boolean value that determines whether the keepalive mechanism is enabled.
+    ///
+    /// When `true`, the keepalive mechanism is enabled, which helps to maintain
+    /// the connection by periodically sending messages to the server. This can
+    /// prevent the connection from being closed due to inactivity.
+    ///
+    /// The default value is `true`.
+    public var keepalive: Bool = true
+    /// A Boolean property that determines whether the SSH connection operates in blocking mode.
+    ///
+    /// When `true`, the connection will block the execution of the program until the operation completes.
+    /// When `false`, the connection will operate in non-blocking mode, allowing the program to continue execution
+    /// while the operation is still in progress.
+    public var blocking: Bool = true
+
     /// The delegate responsible for handling session-related events.
     public var sessionDelegate: SessionDelegate?
 
@@ -54,6 +81,7 @@ public class SSH {
 
     let queue: DispatchQueue = .init(label: "SSH Queue", attributes: .concurrent)
     var socketShell: DispatchSourceRead?
+    var keepAliveSource: DispatchSourceTimer?
 
     /// An `OperationQueue` instance used to manage and execute a collection of operations.
     /// This queue allows for the concurrent execution of multiple operations, providing
