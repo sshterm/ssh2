@@ -13,6 +13,10 @@ let package = Package(
             name: "SSH2",
             targets: ["SSH"]
         ),
+        .library(
+            name: "GeoLite2",
+            targets: ["GeoLite2"]
+        ),
     ],
     dependencies: [
         // .package(name: "CSSH", path: "~/project/github/cssh"),
@@ -21,7 +25,13 @@ let package = Package(
     targets: [
         .target(
             name: "SSH",
-            dependencies: [.product(name: "CSSH", package: "CSSH"), .product(name: "SSHKey", package: "CSSH"), .product(name: "OpenSSL", package: "CSSH")]
+            dependencies: [.product(name: "CSSH", package: "CSSH"), .product(name: "SSHKey", package: "CSSH"), .product(name: "OpenSSL", package: "CSSH"), .product(name: "MaxMindDB", package: "CSSH")]
+        ),
+        .target(
+            name: "GeoLite2",
+            resources: [
+                .process("Resources"),
+            ]
         ),
     ]
 )

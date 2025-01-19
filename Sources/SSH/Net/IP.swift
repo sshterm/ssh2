@@ -155,9 +155,7 @@ public extension IP {
         hints.ai_socktype = SOCK_STREAM
         hints.ai_flags = AI_PASSIVE
         hints.ai_protocol = IPPROTO_TCP
-
         var infoPointer: UnsafeMutablePointer<addrinfo>?
-
         let status = getaddrinfo(domain, nil, &hints, &infoPointer)
         if status == 0 {
             var pointer = infoPointer
