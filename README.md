@@ -37,6 +37,7 @@ print(ssh.clientbanner)
 print(ssh.serverbanner)
 print(ssh.fingerprint(.md5))
 
+let max = MaxMind.shared
 DNS.shared.resolveDomainName("ssh2.app").forEach{print($0,$0.isLanIP,max.lookupIsoCode($0))}
 
 let key = Crypto.shared.generateED25519()
