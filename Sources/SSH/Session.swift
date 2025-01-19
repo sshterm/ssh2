@@ -1,8 +1,10 @@
 // Session.swift
 // Copyright (c) 2025 ssh2.app
-// Created by admin@ssh2.app 2025/1/19.
+// Created by admin@ssh2.app 2025/1/16.
 
+import Crypto
 import CSSH
+import Extension
 import Foundation
 
 public extension SSH {
@@ -338,5 +340,11 @@ public extension SSH {
             libssh2_session_free(rawSession)
             self.rawSession = nil
         }
+    }
+}
+
+extension UnsafeRawPointer {
+    var ssh: SSH {
+        load()
     }
 }

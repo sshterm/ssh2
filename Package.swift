@@ -14,6 +14,10 @@ let package = Package(
             targets: ["SSH"]
         ),
         .library(
+            name: "DNS",
+            targets: ["DNS"]
+        ),
+        .library(
             name: "GeoLite2",
             targets: ["GeoLite2"]
         ),
@@ -25,11 +29,24 @@ let package = Package(
     targets: [
         .target(
             name: "SSH",
-            dependencies: [.product(name: "CSSH", package: "CSSH"), .product(name: "SSHKey", package: "CSSH"), .product(name: "OpenSSL", package: "CSSH"), .product(name: "MaxMindDB", package: "CSSH")],
+            dependencies: [.product(name: "CSSH", package: "CSSH"), "Crypto"],
             swiftSettings: [.define("HAVE_OPENSSL")]
         ),
         .target(
+            name: "Crypto",
+            dependencies: [.product(name: "OpenSSL", package: "CSSH"), .product(name: "SSHKey", package: "CSSH"), "Extension"],
+            swiftSettings: [.define("HAVE_OPENSSL")]
+        ),
+        .target(
+            name: "Extension"
+        ),
+        .target(
+            name: "DNS",
+            dependencies: ["Extension"]
+        ),
+        .target(
             name: "GeoLite2",
+            dependencies: [.product(name: "MaxMindDB", package: "CSSH"), "Extension"],
             resources: [
                 .process("Resources"),
             ]

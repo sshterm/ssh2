@@ -1,7 +1,8 @@
 // HMAC.swift
 // Copyright (c) 2025 ssh2.app
-// Created by admin@ssh2.app 2025/1/19.
+// Created by admin@ssh2.app 2025/1/16.
 
+import Extension
 import Foundation
 #if HAVE_OPENSSL
     import OpenSSL

@@ -1,6 +1,6 @@
 // Auth.swift
 // Copyright (c) 2025 ssh2.app
-// Created by admin@ssh2.app 2025/1/19.
+// Created by admin@ssh2.app 2025/1/16.
 
 import CSSH
 import Foundation
@@ -162,7 +162,7 @@ public extension SSH {
                 return false
             }
             let code = callSSH2 { libssh2_userauth_keyboard_interactive_ex(rawSession, user, user.count.load()) { _, _, _, _, numPrompts, prompts, responses, abstract in
-                guard let ssh = abstract?.address.ssh else {
+                guard let ssh: SSH = abstract?.address.load() else {
                     return
                 }
                 for i in 0 ..< numPrompts.load() {

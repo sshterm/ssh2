@@ -2,10 +2,20 @@
 // Copyright (c) 2025 ssh2.app
 // Created by admin@ssh2.app 2025/1/19.
 
+import Extension
 import Foundation
 import MaxMindDB
 
 public class MaxMind {
+    /// A singleton instance of `MaxMind` initialized with the GeoLite2 country database file.
+    ///
+    /// This instance provides access to the GeoLite2 country database for geolocation lookups.
+    ///
+    /// Usage:
+    /// ```swift
+    /// let maxMindInstance = MaxMind.shared
+    /// ```
+    public static let shared: MaxMind = .init(file: GeoLite2.country)
     var raw: UnsafeMutablePointer<MMDB_s>?
 
     /// Initializes a new instance of the class with the specified file path.

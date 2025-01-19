@@ -4,6 +4,9 @@
 
 import Darwin
 
+import Extension
+import Foundation
+
 public class io {
     /// Copies data from an input stream to an output stream with a specified buffer size and progress callback.
     ///
