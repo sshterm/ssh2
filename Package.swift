@@ -2,21 +2,20 @@
 
 import PackageDescription
 
-
 let package = Package(
     name: "SSH",
     platforms: [
         .macOS(.v13),
         .iOS(.v16),
     ],
-    dependencies: [
-        .package(url: "https://github.com/sshterm/cssh.git", branch: "main"),
-    ],
     products: [
         .library(
             name: "SSH",
             targets: ["SSH"]
         ),
+    ],
+    dependencies: [
+        .package(url: "https://github.com/sshterm/cssh.git", branch: "main"),
     ],
     targets: [
         .target(
