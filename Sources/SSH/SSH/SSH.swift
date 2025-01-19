@@ -17,12 +17,12 @@ public class SSH {
     public static let libssh2_version = LIBSSH2_VERSION
 
     /// The size of the buffer used for SSH operations.
-    /// 
+    ///
     /// This property defines the size of the buffer in bytes. The default value is set to 0x4000 (16384 bytes).
     public var buffersize = 0x4000
 
     /// An array of filenames that should be ignored.
-    /// 
+    ///
     /// This array contains the default filenames `"."` and `".."` which are typically used to represent the current directory and the parent directory, respectively.
     public var ignoredfiles = [".", ".."]
 

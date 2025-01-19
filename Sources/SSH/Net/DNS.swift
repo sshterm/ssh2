@@ -24,7 +24,7 @@ public extension DNS {
     ///
     /// - Parameter domain: The domain name to resolve.
     /// - Returns: An array of IP addresses associated with the given domain name.
-    func resolveDomainName(_ domain: String) -> [String] {
-        IP.shared.resolveIP(domain)
+    func resolveDomainName(_ domain: String) -> [IP] {
+        IP.resolveIP(domain)
     }
 }

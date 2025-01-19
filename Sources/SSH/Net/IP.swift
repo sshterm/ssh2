@@ -5,105 +5,151 @@
 import Darwin
 import Foundation
 
-public class IP {
-    public static let shared: IP = .init()
-}
+public typealias IP = String
 
 public extension IP {
-    /// Checks if the given IPv6 address is a local network address (LAN).
+    /// A computed property that determines if the IP address is an IPv6 LAN IP.
     ///
-    /// This function takes an IPv6 address in string format and determines if it is a local network address
-    /// by checking if it falls within the unique local address (ULA) range, specifically the `fc00::/7` range.
+    /// This property checks if the IP address falls within the following ranges:
+    /// - `::/127` (loopback address)
+    /// - `fc00::/7` (unique local addresses)
+    /// - `fe80::/10` (link-local addresses)
+    /// - `ff00::/8` (multicast addresses)
     ///
-    /// - Parameter ipStr: The IPv6 address in string format to be checked.
-    /// - Returns: `true` if the IPv6 address is a local network address, `false` otherwise.
-    func isIPv6LanIP(_ ipStr: String) -> Bool {
+    /// The method uses `inet_pton` to convert the string representation of the IP address to an `in6_addr` structure.
+    /// It then checks the byte values of the address to determine if it falls within any of the specified ranges.
+    ///
+    /// - Returns: `true` if the IP address is an IPv6 LAN IP, `false` otherwise.
+    var isIPv6LanIP: Bool {
         var addr = in6_addr()
-        if inet_pton(AF_INET6, ipStr, &addr) != 1 {
+        if inet_pton(AF_INET6, self, &addr) != 1 {
             return false
         }
         let bytes = withUnsafeBytes(of: &addr) { Array($0) }
-        if bytes[0] == 0xFC && (bytes[1] & 0x80) == 0x80 {
-            return true
-        }
-        return false
-    }
-
-    /// Checks if the given IP address string is a private IPv4 LAN IP address.
-    ///
-    /// This function verifies if the provided IP address string is a private IPv4 address
-    /// within the following ranges:
-    /// - 10.0.0.0 to 10.255.255.255
-    /// - 172.16.0.0 to 172.31.255.255
-    /// - 192.168.0.0 to 192.168.255.255
-    ///
-    /// - Parameter ipStr: The IP address string to check.
-    /// - Returns: `true` if the IP address is a private IPv4 LAN IP address, `false` otherwise.
-    func isIPv4LanIP(_ ipStr: String) -> Bool {
-        var addr = in_addr()
-        if inet_pton(AF_INET, ipStr, &addr) != 1 {
-            return false
-        }
-        let ip = CFSwapInt32BigToHost(addr.s_addr)
-        if (ip >= 0x0A00_0000 && ip <= 0x0AFF_FFFF) ||
-            (ip >= 0xAC10_0000 && ip <= 0xAC1F_255F) ||
-            (ip >= 0xAC10_0000 && ip <= 0xAC3F_FFFF) ||
-            (ip >= 0xC0A8_0000 && ip <= 0xC0A8_FFFF)
+        if (bytes[0] == 0x00 && bytes[1] == 0x00 && bytes[2] == 0x00 && bytes[3] == 0x00 && bytes[4] == 0x00 && bytes[5] == 0x00 && bytes[6] == 0x00 && bytes[7] == 0x00 && bytes[8] == 0x00 && bytes[9] == 0x00 && bytes[10] == 0x00 && bytes[11] == 0x00 && bytes[12] == 0x00 && bytes[13] == 0x00 && bytes[14] == 0x00 && bytes[15] == 0x01) || // ::/127
+            (bytes[0] & 0xFE) == 0xFC || // fc00::/7
+            (bytes[0] == 0xFE && (bytes[1] & 0xC0) == 0x80) || // fe80::/10
+            bytes[0] == 0xFF // ff00::/8
         {
             return true
         }
         return false
     }
 
-    /// Checks if the given string is a valid IPv4 address.
+    /// A computed property that determines if the IP address is a local area network (LAN) IPv4 address.
     ///
-    /// - Parameter ipStr: The string representation of the IP address to check.
-    /// - Returns: `true` if the string is a valid IPv4 address, `false` otherwise.
-    func isIPv4(_ ipStr: String) -> Bool {
+    /// The property checks if the IP address falls within the following ranges:
+    /// - 0.0.0.0/8
+    /// - 10.0.0.0/8
+    /// - 100.64.0.0/10
+    /// - 127.0.0.0/8
+    /// - 169.254.0.0/16
+    /// - 172.16.0.0/12
+    /// - 192.0.0.0/24
+    /// - 192.0.2.0/24
+    /// - 192.88.99.0/24
+    /// - 192.168.0.0/16
+    /// - 198.18.0.0/15
+    /// - 198.51.100.0/24
+    /// - 203.0.113.0/24
+    /// - 224.0.0.0/3
+    ///
+    /// - Returns: `true` if the IP address is a LAN IPv4 address, `false` otherwise.
+    var isIPv4LanIP: Bool {
         var addr = in_addr()
-        return inet_pton(AF_INET, ipStr, &addr) == 1
+        if inet_pton(AF_INET, self, &addr) != 1 {
+            return false
+        }
+        let ip = CFSwapInt32BigToHost(addr.s_addr)
+        if (ip >= 0x0000_0000 && ip <= 0x00FF_FFFF) || // 0.0.0.0/8
+            (ip >= 0x0A00_0000 && ip <= 0x0AFF_FFFF) || // 10.0.0.0/8
+            (ip >= 0x6440_0000 && ip <= 0x647F_FFFF) || // 100.64.0.0/10
+            (ip >= 0x7F00_0000 && ip <= 0x7FFF_FFFF) || // 127.0.0.0/8
+            (ip >= 0xA9FE_0000 && ip <= 0xA9FE_FFFF) || // 169.254.0.0/16
+            (ip >= 0xAC10_0000 && ip <= 0xAC1F_FFFF) || // 172.16.0.0/12
+            (ip >= 0xC000_0000 && ip <= 0xC000_00FF) || // 192.0.0.0/24
+            (ip >= 0xC000_0200 && ip <= 0xC000_02FF) || // 192.0.2.0/24
+            (ip >= 0xC058_6300 && ip <= 0xC058_63FF) || // 192.88.99.0/24
+            (ip >= 0xC0A8_0000 && ip <= 0xC0A8_FFFF) || // 192.168.0.0/16
+            (ip >= 0xC612_0000 && ip <= 0xC613_FFFF) || // 198.18.0.0/15
+            (ip >= 0xC633_6400 && ip <= 0xC633_64FF) || // 198.51.100.0/24
+            (ip >= 0xCB00_7100 && ip <= 0xCB00_71FF) || // 203.0.113.0/24
+            (ip >= 0xE000_0000 && ip <= 0xFFFF_FFFF) // 224.0.0.0/3
+        {
+            return true
+        }
+        return false
     }
 
-    /// Checks if the given IP address string is a valid IPv6 address.
+    /// A computed property that checks if the IP address is a fake IP.
     ///
-    /// - Parameter ipStr: The IP address string to be checked.
-    /// - Returns: `true` if the IP address string is a valid IPv6 address, `false` otherwise.
-    func isIPv6(_ ipStr: String) -> Bool {
+    /// This property converts the string representation of the IP address to a binary format
+    /// and checks if it falls within the range of fake IP addresses (198.18.0.0 to 198.19.255.255).
+    ///
+    /// - Returns: `true` if the IP address is a fake IP, `false` otherwise.
+    var isFakeIP: Bool {
+        var addr = in_addr()
+        if inet_pton(AF_INET, self, &addr) != 1 {
+            return false
+        }
+        let ip = CFSwapInt32BigToHost(addr.s_addr)
+        if
+            ip >= 0xC612_0000 && ip <= 0xC613_FFFF
+        {
+            return true
+        }
+        return false
+    }
+
+    /// A computed property that checks if the string is a valid IPv4 address.
+    ///
+    /// This property uses the `inet_pton` function to determine if the string
+    /// can be converted to a valid IPv4 address.
+    ///
+    /// - Returns: `true` if the string is a valid IPv4 address, `false` otherwise.
+    var isIPv4: Bool {
+        var addr = in_addr()
+        return inet_pton(AF_INET, self, &addr) == 1
+    }
+
+    /// A computed property that checks if the given IP address string is an IPv6 address.
+    ///
+    /// This property uses the `inet_pton` function to determine if the IP address string
+    /// can be successfully converted to an IPv6 address.
+    ///
+    /// - Returns: A Boolean value indicating whether the IP address string is an IPv6 address.
+    var isIPv6: Bool {
         var addr = in6_addr()
-        return inet_pton(AF_INET6, ipStr, &addr) == 1
+        return inet_pton(AF_INET6, self, &addr) == 1
     }
 
-    /// Checks if the given IP address is a LAN (Local Area Network) IP address.
-    ///
-    /// This function determines if the provided IP address string is either an IPv4 or IPv6 LAN IP address.
-    ///
-    /// - Parameter ipStr: The IP address string to check.
-    /// - Returns: A Boolean value indicating whether the IP address is a LAN IP address.
-    func isLanIP(_ ipStr: String) -> Bool {
-        isIPv4LanIP(ipStr) || isIPv6LanIP(ipStr)
+    /// A computed property that checks if the IP address is a LAN (Local Area Network) IP address.
+    /// It returns `true` if the IP address is either an IPv4 LAN IP or an IPv6 LAN IP.
+    var isLanIP: Bool {
+        isIPv4LanIP || isIPv6LanIP
     }
 
-    /// Checks if the given string is a valid IP address (either IPv4 or IPv6).
-    ///
-    /// - Parameter ipStr: The string to be checked.
-    /// - Returns: `true` if the string is a valid IP address, `false` otherwise.
-    func isIP(_ ipStr: String) -> Bool {
-        isIPv4(ipStr) || isIPv6(ipStr)
+    /// A computed property that checks if the current instance is an IP address.
+    /// It returns `true` if the instance is either an IPv4 or IPv6 address.
+    var isIP: Bool {
+        isIPv4 || isIPv6
     }
 
     /// Resolves the given domain name to a list of IP addresses.
     ///
-    /// This function uses the `getaddrinfo` system call to perform DNS resolution
-    /// and returns a list of IP addresses associated with the given domain name.
+    /// This function attempts to resolve the provided domain name into a list of IP addresses.
+    /// If the domain is already an IP address, it returns an array containing that IP address.
+    /// Otherwise, it uses the `getaddrinfo` function to perform the resolution and returns
+    /// an array of resolved IP addresses.
     ///
     /// - Parameter domain: The domain name to resolve.
-    /// - Returns: An array of IP addresses as strings. If the domain name cannot be resolved,
-    ///            an empty array is returned.
-    func resolveIP(_ domain: String) -> [String] {
-        if isIP(domain) {
+    /// - Returns: An array of resolved IP addresses. If the domain is already an IP address,
+    ///            the array contains that IP address. If the resolution fails, an empty array is returned.
+    static func resolveIP(_ domain: String) -> [IP] {
+        if domain.isIP {
             return [domain]
         }
-        var results = [String]()
+        var results = [IP]()
         var hints = addrinfo()
         hints.ai_family = AF_UNSPEC
         hints.ai_socktype = SOCK_STREAM
