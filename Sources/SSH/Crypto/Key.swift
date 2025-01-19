@@ -70,8 +70,7 @@ public extension Crypto {
         BIO_read(bio, &buffer, Int32(len))
 
         buffer[len] = 0
-        let ret = String(cString: buffer)
-        return ret
+        return buffer.string
     }
 
     /// Converts a given private key to a PEM formatted public key string.
@@ -122,6 +121,6 @@ public extension Crypto {
         guard let key = sshkey_pub(privKey, id.method) else {
             return nil
         }
-        return String(cString: key)
+        return key.string
     }
 }
