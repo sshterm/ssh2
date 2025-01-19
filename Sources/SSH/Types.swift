@@ -1,6 +1,6 @@
 // Types.swift
 // Copyright (c) 2025 ssh2.app
-// Created by admin@ssh2.app 2025/1/17.
+// Created by admin@ssh2.app 2025/1/19.
 
 import CSSH
 import Darwin
@@ -131,7 +131,13 @@ public enum TraceType: String, CaseIterable {
     }
 }
 
+/// Extension for an array of `TraceType` to compute the combined trace value.
 extension [TraceType] {
+    /// Computes the combined trace value for an array of `TraceType`.
+    ///
+    /// This property iterates through the array of `TraceType` and combines their trace values using the bitwise OR operation.
+    ///
+    /// - Returns: An `Int32` value representing the combined trace value.
     var trace: Int32 {
         var traces: Int32 = 0
         for t in self {
@@ -141,43 +147,45 @@ extension [TraceType] {
     }
 }
 
+/// Represents various SSH methods used in the SSH protocol.
 public enum Method: String, CaseIterable {
-    case kex
-    case hostkey
-    case crypt_cs
-    case crypt_sc
-    case mac_cs
-    case mac_sc
-    case comp_cs
-    case comp_sc
-    case lang_cs
-    case lang_sc
-    case sign_algo0
+    case kex // Key exchange method
+    case hostkey // Host key method
+    case crypt_cs // Encryption method for client to server
+    case crypt_sc // Encryption method for server to client
+    case mac_cs // MAC (Message Authentication Code) method for client to server
+    case mac_sc // MAC (Message Authentication Code) method for server to client
+    case comp_cs // Compression method for client to server
+    case comp_sc // Compression method for server to client
+    case lang_cs // Language method for client to server
+    case lang_sc // Language method for server to client
+    case sign_algo0 // Signature algorithm method
 
+    /// Returns the corresponding `Int32` value for each SSH method.
     var value: Int32 {
         switch self {
         case .kex:
-            LIBSSH2_METHOD_KEX
+            return LIBSSH2_METHOD_KEX
         case .hostkey:
-            LIBSSH2_METHOD_HOSTKEY
+            return LIBSSH2_METHOD_HOSTKEY
         case .crypt_cs:
-            LIBSSH2_METHOD_CRYPT_CS
+            return LIBSSH2_METHOD_CRYPT_CS
         case .crypt_sc:
-            LIBSSH2_METHOD_CRYPT_SC
+            return LIBSSH2_METHOD_CRYPT_SC
         case .mac_cs:
-            LIBSSH2_METHOD_MAC_CS
+            return LIBSSH2_METHOD_MAC_CS
         case .mac_sc:
-            LIBSSH2_METHOD_MAC_SC
+            return LIBSSH2_METHOD_MAC_SC
         case .comp_cs:
-            LIBSSH2_METHOD_COMP_CS
+            return LIBSSH2_METHOD_COMP_CS
         case .comp_sc:
-            LIBSSH2_METHOD_COMP_SC
+            return LIBSSH2_METHOD_COMP_SC
         case .lang_cs:
-            LIBSSH2_METHOD_LANG_CS
+            return LIBSSH2_METHOD_LANG_CS
         case .lang_sc:
-            LIBSSH2_METHOD_LANG_SC
+            return LIBSSH2_METHOD_LANG_SC
         case .sign_algo0:
-            LIBSSH2_METHOD_SIGN_ALGO
+            return LIBSSH2_METHOD_SIGN_ALGO
         }
     }
 }

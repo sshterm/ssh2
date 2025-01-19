@@ -5,6 +5,7 @@
 import Foundation
 
 public extension OutputStream {
+    /// Retrieves the data written to a memory stream.
     var data: Data? {
         guard let data = property(forKey: Stream.PropertyKey.dataWrittenToMemoryStreamKey) as? Data else {
             return nil

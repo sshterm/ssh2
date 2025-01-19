@@ -1,41 +1,41 @@
 // File.swift
 // Copyright (c) 2025 ssh2.app
-// Created by admin@ssh2.app 2024/8/17.
+// Created by admin@ssh2.app 2025/1/19.
 
 import CSSH
 import Foundation
 
 public struct FileStat {
-    // 文件类型
+    // File type
     public let fileType: FileType
 
-    // 文件大小
+    // File size
     public let size: UInt64
 
-    // 用户ID
+    // User ID
     public let userId: UInt
 
-    // 组ID
+    // Group ID
     public let groupId: UInt
 
-    // 文件权限
+    // File permissions
     public let permissions: FilePermissions
 
-    // 最后访问时间
+    // Last accessed time
     public let lastAccessed: Date
 
-    // 最后修改时间
+    // Last modified time
     public let lastModified: Date
 
     /**
-     初始化FileStat结构体
+     Initializes the FileStat structure
      - Parameters:
-        - attributes: LIBSSH2_SFTP_ATTRIBUTES类型的属性，包含文件的各种信息
-     - Returns: 如果能成功解析attributes，则返回FileStat实例，否则返回nil
+        - attributes: LIBSSH2_SFTP_ATTRIBUTES type attributes containing various file information
+     - Returns: If attributes can be successfully parsed, returns a FileStat instance, otherwise returns nil
      */
     init(attributes: LIBSSH2_SFTP_ATTRIBUTES) {
         fileType = FileType(rawValue: Int32(attributes.permissions))
-        // 直接赋值其他属性
+        // Directly assign other attributes
         size = attributes.filesize
         userId = attributes.uid
         groupId = attributes.gid
@@ -47,45 +47,45 @@ public struct FileStat {
 
 public struct FileAttributes: Identifiable {
     public let id = UUID()
-    // 文件名
+    // File name
     public let name: String
-    // 文件的长名称，可能包含用户和组信息
+    // Long file name, may contain user and group information
     public let longname: String
 
-    // 文件类型
+    // File type
     public let fileType: FileType
 
-    // 文件大小
+    // File size
     public let size: Int64
 
-    // 文件所有者
+    // File owner
     public let user: String
 
-    // 文件所属组
+    // File group
     public let group: String
 
-    // 用户ID
+    // User ID
     public let userId: UInt
 
-    // 组ID
+    // Group ID
     public let groupId: UInt
 
-    // 文件权限
+    // File permissions
     public let permissions: FilePermissions
 
-    // 最后访问时间
+    // Last accessed time
     public let lastAccessed: Date
 
-    // 最后修改时间
+    // Last modified time
     public let lastModified: Date
 
     /**
-     使用LIBSSH2_SFTP_ATTRIBUTES结构体初始化FileAttributes实例
+     Initializes the FileAttributes instance using LIBSSH2_SFTP_ATTRIBUTES structure
 
      - Parameters:
-        - attributes: LIBSSH2_SFTP_ATTRIBUTES结构体，包含文件属性信息
+        - attributes: LIBSSH2_SFTP_ATTRIBUTES structure containing file attribute information
 
-     - Returns: 如果fileType能够从attributes.permissions正确解析，则返回FileAttributes实例，否则返回nil
+     - Returns: If fileType can be correctly parsed from attributes.permissions, returns a FileAttributes instance, otherwise returns nil
      */
     init(attributes: LIBSSH2_SFTP_ATTRIBUTES) {
         fileType = FileType(rawValue: Int32(attributes.permissions))
@@ -102,14 +102,14 @@ public struct FileAttributes: Identifiable {
     }
 
     /**
-     使用文件名、长名称和LIBSSH2_SFTP_ATTRIBUTES结构体初始化FileAttributes实例
+     Initializes the FileAttributes instance using file name, long name, and LIBSSH2_SFTP_ATTRIBUTES structure
 
      - Parameters:
-        - name: 文件名
-        - longname: 文件的长名称，可能包含用户和组信息
-        - attributes: LIBSSH2_SFTP_ATTRIBUTES结构体，包含文件属性信息
+        - name: File name
+        - longname: Long file name, may contain user and group information
+        - attributes: LIBSSH2_SFTP_ATTRIBUTES structure containing file attribute information
 
-     - Returns: 如果fileType能够从attributes.permissions正确解析，则返回FileAttributes实例，否则返回nil
+     - Returns: If fileType can be correctly parsed from attributes.permissions, returns a FileAttributes instance, otherwise returns nil
      */
     init(name: String, longname: String, attributes: LIBSSH2_SFTP_ATTRIBUTES) {
         fileType = FileType(rawValue: Int32(attributes.permissions))
@@ -127,68 +127,68 @@ public struct FileAttributes: Identifiable {
 }
 
 enum SFTPField: Int {
-    case perm = 0 // 权限
-    case fixme // 待修复
-    case owner // 所有者
-    case group // 组
-    case size // 大小
-    case moon // 月份
-    case day // 日期
-    case time // 时间
+    case perm = 0 // Permissions
+    case fixme // To be fixed
+    case owner // Owner
+    case group // Group
+    case size // Size
+    case moon // Month
+    case day // Day
+    case time // Time
 }
 
-/// 解析长文件名中的特定字段
+/// Parses specific fields from the long file name
 ///
 /// - Parameters:
-///   - longname: 包含多个字段的长文件名字符串
-///   - field: 需要解析的SFTP字段枚举值
-/// - Returns: 如果长文件名有效且请求的字段存在，则返回该字段的值；否则返回nil
+///   - longname: Long file name string containing multiple fields
+///   - field: SFTPField enum value representing the field to be parsed
+/// - Returns: If the long file name is valid and the requested field exists, returns the value of the field; otherwise returns nil
 func sftpParseLongname(_ longname: String, _ field: SFTPField) -> String? {
-    // 使用空格分割长文件名字符串
+    // Split the long file name string by spaces
     let components = longname.split(separator: " ")
-    // 检查分割后的组件数量是否大于8，以及请求的字段索引是否在有效范围内
+    // Check if the number of components is greater than 8 and if the requested field index is within the valid range
     guard components.count > 8, field.rawValue < components.count else { return nil }
-    // 返回请求字段的值
+    // Return the value of the requested field
     return String(components[field.rawValue])
 }
 
-// Permissions 结构体定义了一个权限集合，它使用 OptionSet 协议来实现位掩码操作。
+// Permissions struct defines a set of permissions using the OptionSet protocol to implement bitmask operations.
 public struct Permissions: OptionSet {
-    // rawValue 属性用于存储权限集合的原始值，该值是一个无符号整数。
+    // rawValue property stores the raw value of the permissions set, which is an unsigned integer.
     public let rawValue: UInt
 
-    // init(rawValue:) 是 Permissions 结构体的初始化器，用于根据给定的原始值创建权限实例。
+    // init(rawValue:) is the initializer for the Permissions struct, used to create a permissions instance from a given raw value.
     public init(rawValue: UInt) {
         self.rawValue = rawValue
     }
 
-    // read 是一个静态属性，表示读权限。它的 rawValue 设置为 1 左移 1 位，即二进制的 0010。
+    // read is a static property representing read permission. Its rawValue is set to 1 shifted left by 1 bit, which is binary 0010.
     public static let read = Permissions(rawValue: 1 << 1)
 
-    // write 是一个静态属性，表示写权限。它的 rawValue 设置为 1 左移 2 位，即二进制的 0100。
+    // write is a static property representing write permission. Its rawValue is set to 1 shifted left by 2 bits, which is binary 0100.
     public static let write = Permissions(rawValue: 1 << 2)
 
-    // execute 是一个静态属性，表示执行权限。它的 rawValue 设置为 1 左移 3 位，即二进制的 1000。
+    // execute is a static property representing execute permission. Its rawValue is set to 1 shifted left by 3 bits, which is binary 1000.
     public static let execute = Permissions(rawValue: 1 << 3)
 }
 
 public struct FilePermissions: RawRepresentable {
-    // 文件所有者的权限
+    // Owner's permissions
     public var owner: Permissions
 
-    // 文件所属组的权限
+    // Group's permissions
     public var group: Permissions
 
-    // 其他用户的权限
+    // Others' permissions
     public var others: Permissions
 
     /**
-     初始化文件对象
+     Initializes the FilePermissions object
 
      - Parameters:
-        - owner: 文件所有者的权限对象
-        - group: 文件所属组的权限对象
-        - others: 其他用户的权限对象
+        - owner: Permissions object for the file owner
+        - group: Permissions object for the file group
+        - others: Permissions object for other users
      */
     public init(owner: Permissions, group: Permissions, others: Permissions) {
         self.owner = owner
@@ -196,33 +196,33 @@ public struct FilePermissions: RawRepresentable {
         self.others = others
     }
 
-    // 初始化方法，根据传入的原始整数值设置文件权限
+    // Initializer that sets file permissions based on the given raw integer value
     public init(rawValue: Int32) {
-        // 初始化所有者、组和其他用户的权限集合
+        // Initialize permissions sets for owner, group, and others
         var owner: Permissions = []
         var group: Permissions = []
         var others: Permissions = []
 
-        // 检查并设置所有者的读权限
+        // Check and set read permission for owner
         if rawValue & LIBSSH2_SFTP_S_IRUSR == LIBSSH2_SFTP_S_IRUSR { owner.insert(.read) }
-        // 检查并设置所有者的写权限
+        // Check and set write permission for owner
         if rawValue & LIBSSH2_SFTP_S_IWUSR == LIBSSH2_SFTP_S_IWUSR { owner.insert(.write) }
-        // 检查并设置所有者的执行权限
+        // Check and set execute permission for owner
         if rawValue & LIBSSH2_SFTP_S_IXUSR == LIBSSH2_SFTP_S_IXUSR { owner.insert(.execute) }
-        // 检查并设置组的读权限
+        // Check and set read permission for group
         if rawValue & LIBSSH2_SFTP_S_IRGRP == LIBSSH2_SFTP_S_IRGRP { group.insert(.read) }
-        // 检查并设置组的写权限
+        // Check and set write permission for group
         if rawValue & LIBSSH2_SFTP_S_IWGRP == LIBSSH2_SFTP_S_IWGRP { group.insert(.write) }
-        // 检查并设置组的执行权限
+        // Check and set execute permission for group
         if rawValue & LIBSSH2_SFTP_S_IXGRP == LIBSSH2_SFTP_S_IXGRP { group.insert(.execute) }
-        // 检查并设置其他用户的读权限
+        // Check and set read permission for others
         if rawValue & LIBSSH2_SFTP_S_IROTH == LIBSSH2_SFTP_S_IROTH { others.insert(.read) }
-        // 检查并设置其他用户的写权限
+        // Check and set write permission for others
         if rawValue & LIBSSH2_SFTP_S_IWOTH == LIBSSH2_SFTP_S_IWOTH { others.insert(.write) }
-        // 检查并设置其他用户的执行权限
+        // Check and set execute permission for others
         if rawValue & LIBSSH2_SFTP_S_IXOTH == LIBSSH2_SFTP_S_IXOTH { others.insert(.execute) }
 
-        // 使用设置好的权限集合初始化当前对象
+        // Initialize the current object with the set permissions
         self.init(owner: owner, group: group, others: others)
     }
 
@@ -234,74 +234,74 @@ public struct FilePermissions: RawRepresentable {
         Int(rawValue)
     }
 
-    // 计算并返回SFTP文件权限的原始值
+    // Calculate and return the raw value of the SFTP file permissions
     public var rawValue: Int32 {
-        var flag: Int32 = 0 // 初始化权限标志为0
+        var flag: Int32 = 0 // Initialize the permissions flag to 0
 
-        // 检查所有者是否有读权限，并更新权限标志
+        // Check if the owner has read permission and update the permissions flag
         if owner.contains(.read) { flag |= LIBSSH2_SFTP_S_IRUSR }
-        // 检查所有者是否有写权限，并更新权限标志
+        // Check if the owner has write permission and update the permissions flag
         if owner.contains(.write) { flag |= LIBSSH2_SFTP_S_IWUSR }
-        // 检查所有者是否有执行权限，并更新权限标志
+        // Check if the owner has execute permission and update the permissions flag
         if owner.contains(.execute) { flag |= LIBSSH2_SFTP_S_IXUSR }
 
-        // 检查组是否有读权限，并更新权限标志
+        // Check if the group has read permission and update the permissions flag
         if group.contains(.read) { flag |= LIBSSH2_SFTP_S_IRGRP }
-        // 检查组是否有写权限，并更新权限标志
+        // Check if the group has write permission and update the permissions flag
         if group.contains(.write) { flag |= LIBSSH2_SFTP_S_IWGRP }
-        // 检查组是否有执行权限，并更新权限标志
+        // Check if the group has execute permission and update the permissions flag
         if group.contains(.execute) { flag |= LIBSSH2_SFTP_S_IXGRP }
 
-        // 检查其他用户是否有读权限，并更新权限标志
+        // Check if others have read permission and update the permissions flag
         if others.contains(.read) { flag |= LIBSSH2_SFTP_S_IROTH }
-        // 检查其他用户是否有写权限，并更新权限标志
+        // Check if others have write permission and update the permissions flag
         if others.contains(.write) { flag |= LIBSSH2_SFTP_S_IWOTH }
-        // 检查其他用户是否有执行权限，并更新权限标志
+        // Check if others have execute permission and update the permissions flag
         if others.contains(.execute) { flag |= LIBSSH2_SFTP_S_IXOTH }
 
-        return flag // 返回计算出的权限原始值
+        return flag // Return the calculated raw value of the permissions
     }
 
-    // mode属性用于获取文件权限的八进制表示形式。
-    // 它通过将rawValue与0o777进行按位与操作，然后使用String的format方法将其转换为三位八进制字符串。
+    // The mode property is used to get the octal representation of the file permissions.
+    // It performs a bitwise AND operation with 0o777 on rawValue and then uses the String format method to convert it to a three-digit octal string.
     public var mode: String {
         String(format: "%03o", rawValue & 0o777)
     }
 
-    /// FilePermissions结构体的默认实例，表示文件权限。
-    /// - owner: 文件所有者的权限，默认为可读可写。
-    /// - group: 文件所属组的权限，默认为可读。
-    /// - others: 其他用户的权限，默认为可读。
+    /// The default instance of the FilePermissions struct, representing file permissions.
+    /// - owner: Permissions for the file owner, default is read and write.
+    /// - group: Permissions for the file group, default is read.
+    /// - others: Permissions for other users, default is read.
     public static let `default` = FilePermissions(owner: [.read, .write], group: [.read], others: [.read])
 }
 
 public struct Statvfs {
-    // 文件系统块大小
+    // File system block size
     public let bsize: UInt64
-    // 系统分配的块大小
+    // System allocated block size
     public let frsize: UInt64
-    // 文件系统数据块总数
+    // Total number of data blocks in the file system
     public let blocks: UInt64
-    // 可用数据块总数
+    // Total number of available data blocks
     public let bfree: UInt64
-    // 非超级用户可用的数据块总数
+    // Total number of available data blocks for non-superuser
     public let bavail: UInt64
-    // 文件结点总数
+    // Total number of file nodes
     public let files: UInt64
-    // 可用文件结点总数
+    // Total number of available file nodes
     public let ffree: UInt64
-    // 非超级用户可用的文件结点总数
+    // Total number of available file nodes for non-superuser
     public let favail: UInt64
-    // 文件系统ID
+    // File system ID
     public let fsid: UInt64
-    // 文件系统标志
+    // File system flags
     public let flag: UInt64
-    // 文件名的最大长度
+    // Maximum length of file names
     public let namemax: UInt64
 
     /**
-     初始化Statvfs结构体实例
-     - Parameter statvfs: LIBSSH2_SFTP_STATVFS类型的结构体，包含文件系统的统计信息
+     Initializes the Statvfs structure instance
+     - Parameter statvfs: LIBSSH2_SFTP_STATVFS type structure containing file system statistics
      */
     init(statvfs: LIBSSH2_SFTP_STATVFS) {
         bsize = statvfs.f_bsize
@@ -319,19 +319,19 @@ public struct Statvfs {
 }
 
 public enum FileType: String, CaseIterable {
-    case link // 链接
-    case regularFile // 普通文件
-    case directory // 目录
-    case characterSpecialFile // 字符特殊文件
-    case blockSpecialFile // 块特殊文件
-    case fifo // 先进先出队列
-    case socket // 套接字
-    case unknown // 无法识别的文件类型
+    case link // Link
+    case regularFile // Regular file
+    case directory // Directory
+    case characterSpecialFile // Character special file
+    case blockSpecialFile // Block special file
+    case fifo // FIFO queue
+    case socket // Socket
+    case unknown // Unrecognized file type
 
     /**
-     根据整数值初始化文件类型枚举
-     - Parameter rawValue: 文件类型的整数值表示
-     - Returns: 对应的FileType枚举值，如果无法识别则返回nil
+     Initializes the file type enum based on an integer value
+     - Parameter rawValue: Integer representation of the file type
+     - Returns: Corresponding FileType enum value, returns nil if unrecognized
      */
     public init(rawValue: Int32) {
         switch rawValue & LIBSSH2_SFTP_S_IFMT {
