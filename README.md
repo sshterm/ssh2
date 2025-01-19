@@ -11,5 +11,22 @@ The Swift Package Manager is a tool for automating the distribution of Swift cod
 ```
 
 ```swift
-.product(name: "SSH", package: "SSH")
+[.product(name: "SSH2", package: "SSH2")]
+```
+
+# Demo
+```swift
+import SSH
+
+DNS.shared.requireEncrypted(PubDNS.alidns.dohConfiguration)
+print(SSH.version,SSH.libssh2_version)
+let ssh = SSH(host: "openwrt.local", port: "22", user: "root")
+ssh.trace = [.auth]
+print(await ssh.checkActive())
+print(await ssh.connect())
+print(await ssh.handshake())
+print(await ssh.authenticate(password: "openwrt"))
+print(ssh.clientbanner)
+print(ssh.serverbanner)
+print(ssh.fingerprint(.md5))
 ```
