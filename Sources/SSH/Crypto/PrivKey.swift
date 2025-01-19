@@ -37,12 +37,12 @@ public extension PrivKey {
 
     /// A computed property that returns the public key in PEM format as a `String`.
     ///
-    /// This property uses OpenSSL functions to write the public key associated with
-    /// the private key (`privKey`) to a memory BIO (Basic Input/Output) and then
-    /// converts the contents of the BIO to a `String`.
+    /// This property uses OpenSSL functions to convert the private key (`privKey`)
+    /// to a public key in PEM format. It writes the public key to a memory BIO
+    /// (Basic Input/Output) and then converts the BIO to a `String`.
     ///
     /// - Returns: A `String` containing the public key in PEM format.
-    var pubPEM: String {
+    var pubKeyPEM: String {
         let out = BIO_new(BIO_s_mem())!
         defer { BIO_free(out) }
 
