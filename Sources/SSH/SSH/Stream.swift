@@ -62,7 +62,7 @@ class SFTPInputStream: InputStream {
     }
 
     override var hasBytesAvailable: Bool {
-        handle != nil && got < size && nread > 0 && libssh2_sftp_last_error(handle) == LIBSSH2_FX_OK
+        handle != nil && got < size && nread >= 0 && libssh2_sftp_last_error(handle) == LIBSSH2_FX_OK
     }
 }
 
@@ -113,7 +113,7 @@ class SFTPOutputStream: OutputStream {
     }
 
     override var hasSpaceAvailable: Bool {
-        handle != nil && nwrite > 0 && libssh2_sftp_last_error(handle) == LIBSSH2_FX_OK
+        handle != nil && nwrite >= 0 && libssh2_sftp_last_error(handle) == LIBSSH2_FX_OK
     }
 }
 
@@ -167,7 +167,7 @@ class SCPInputStream: InputStream {
     }
 
     override var hasBytesAvailable: Bool {
-        handle != nil && got < size && nread > 0
+        handle != nil && got < size && nread >= 0
     }
 }
 
@@ -212,7 +212,7 @@ class SCPOutputStream: OutputStream {
     }
 
     override var hasSpaceAvailable: Bool {
-        handle != nil && nwrite > 0
+        handle != nil && nwrite >= 0
     }
 }
 
@@ -259,7 +259,7 @@ class ChannelInputStream: InputStream {
     override func close() {}
 
     override var hasBytesAvailable: Bool {
-        nread > 0
+        nread >= 0
     }
 }
 
@@ -283,6 +283,50 @@ class ChannelOutputStream: OutputStream {
     override func close() {}
 
     override var hasSpaceAvailable: Bool {
-        nwrite > 0
+        nwrite >= 0
+    }
+}
+
+class SocketOutput: OutputStream {
+    let fd: SockFD
+    var nwrite: Int = 0
+    init(_ fd: SockFD) {
+        self.fd = fd
+        super.init()
+    }
+
+    override func write(_ buffer: UnsafePointer<UInt8>, maxLength len: Int) -> Int {
+        nwrite = fd.write(buffer, len)
+        return nwrite
+    }
+
+    override func open() {}
+
+    override func close() {}
+
+    override var hasSpaceAvailable: Bool {
+        nwrite >= 0
+    }
+}
+
+class SocketInput: InputStream {
+    let fd: SockFD
+    var nread: Int = 0
+    init(_ fd: SockFD) {
+        self.fd = fd
+        super.init()
+    }
+
+    override func read(_ buffer: UnsafeMutablePointer<UInt8>, maxLength len: Int) -> Int {
+        nread = fd.read(buffer, len)
+        return nread
+    }
+
+    override func open() {}
+
+    override func close() {}
+
+    override var hasBytesAvailable: Bool {
+        nread >= 0
     }
 }
