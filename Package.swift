@@ -11,7 +11,7 @@ let package = Package(
     products: [
         .library(
             name: "SSH2",
-            targets: ["SSH2"]
+            targets: ["SSH"]
         ),
     ],
     dependencies: [
@@ -19,7 +19,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "SSH2",
+            name: "SSH",
             dependencies: [.product(name: "CSSH", package: "CSSH"),.product(name: "SSHKey", package: "CSSH")]
         )
     ]
