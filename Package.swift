@@ -29,8 +29,7 @@ let package = Package(
     targets: [
         .target(
             name: "SSH",
-            dependencies: [.product(name: "CSSH", package: "CSSH"), "Crypto"],
-            swiftSettings: [.define("HAVE_OPENSSL")]
+            dependencies: [.product(name: "CSSH", package: "CSSH"), "Crypto"]
         ),
         .target(
             name: "Crypto",
