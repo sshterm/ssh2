@@ -33,7 +33,7 @@ public class SSH {
     public var socket: Socket = -1
     public let host: String
     public let port: String
-    public let user: String
+    public var user: String
     public let timeout: Int
     public let compress: Bool
 
