@@ -70,12 +70,14 @@ public struct ProxyConfiguration {
             guard fd.write(&greeting, greeting.count) == greeting.count else {
                 return false
             }
-            var response = [UInt8](repeating: 0, count: 2)
-            fd.read(&response, response.count)
-            guard response[0] == 0x05 else {
+            var response: Buffer<UInt8> = .init(2)
+            guard fd.read(response.buffer, response.count) == 2 else {
                 return false
             }
-            if response[1] == 0x02 {
+            guard response.buffer[0] == 0x05 else {
+                return false
+            }
+            if response.buffer[1] == 0x02 {
                 guard let username, let password else {
                     return false
                 }
@@ -85,12 +87,14 @@ public struct ProxyConfiguration {
                 guard fd.write(&authRequest, authRequest.count) == authRequest.count else {
                     return false
                 }
-                var response = [UInt8](repeating: 0, count: 2)
-                fd.read(&response, response.count)
-                guard response[0] == 0x05 else {
+                var response: Buffer<UInt8> = .init(2)
+                guard fd.read(response.buffer, response.count) == 2 else {
                     return false
                 }
-                guard response[1] == 0x00 else {
+                guard response.buffer[0] == 0x05 else {
+                    return false
+                }
+                guard response.buffer[1] == 0x00 else {
                     return false
                 }
             }
@@ -119,12 +123,14 @@ public struct ProxyConfiguration {
             guard fd.write(&request, request.count) == request.count else {
                 return false
             }
-            var connectResponse = [UInt8](repeating: 0, count: 10)
-            fd.read(&connectResponse, connectResponse.count)
-            guard connectResponse[0] == 0x05 else {
+            var connectResponse: Buffer<UInt8> = .init(10)
+            guard fd.read(connectResponse.buffer, connectResponse.count) == 10 else {
                 return false
             }
-            guard connectResponse[1] == 0x00 else {
+            guard connectResponse.buffer[0] == 0x05 else {
+                return false
+            }
+            guard connectResponse.buffer[1] == 0x00 else {
                 return false
             }
         }
