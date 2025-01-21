@@ -149,14 +149,16 @@ public extension IP {
         isIPv4 ? AF_INET : AF_INET6
     }
 
-    /// A computed property that returns the raw byte representation of the IP address.
+    /// The `addr` computed property attempts to convert the current IP address string into its binary representation as a `Data` object.
     ///
-    /// This property uses `inet_pton` to convert the IP address string into its binary form. The resulting `Data` object contains the raw bytes of the IP address, which can be useful for low-level network operations, serialization, or other byte-wise manipulations.
+    /// - Returns: A `Data` object containing the raw bytes of the IP address if conversion is successful; otherwise, `nil`.
     ///
-    /// - Returns: A `Data` object containing the raw bytes of the IP address.
-    var addr: Data {
+    /// - Note: This property uses the `inet_pton` function to perform the conversion. It is important to ensure that the IP address string is properly formatted for the address family (`AF_INET` for IPv4 or `AF_INET6` for IPv6) before calling this property.
+    var addr: Data? {
         var bytes = [UInt8](repeating: 0, count: size)
-        inet_pton(af, self, &bytes)
+        guard inet_pton(af, self, &bytes) == 1 else {
+            return nil
+        }
         return Data(bytes)
     }
 

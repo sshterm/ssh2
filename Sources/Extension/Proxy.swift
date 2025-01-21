@@ -98,10 +98,16 @@ public struct ProxyConfiguration {
             var request: [UInt8] = [0x05, 0x01, 0x00]
             if host.isIPv4 {
                 request.append(0x01)
-                request += host.addr
+                guard let addr = host.addr else {
+                    return false
+                }
+                request += addr
             } else if host.isIPv6 {
                 request.append(0x04)
-                request += host.addr
+                guard let addr = host.addr else {
+                    return false
+                }
+                request += addr
             } else {
                 return false
 //                request.append(0x03)
