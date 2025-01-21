@@ -64,7 +64,7 @@ public struct ProxyConfiguration {
             }
         case .socks5:
             var greeting: [UInt8] = [0x05, 0x01, 0x00]
-            if username != nil && password != nil {
+            if username != nil, password != nil {
                 greeting = [0x05, 0x01, 0x02]
             }
             guard fd.write(&greeting, greeting.count) == greeting.count else {
