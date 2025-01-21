@@ -105,8 +105,6 @@ public extension SSH {
     /// or the read operation is complete, the shell is canceled. The cancel handler
     /// notifies the delegate that the connection is offline and sends an EOF signal.
     ///
-    /// - Note: This function assumes that `socket`, `queue`, `onData`, `isPol`, `isPolError`,
-    ///   `isRead`, `cancelShell`, `channelDelegate`, and `sendEOF` are defined elsewhere in the class.
     private func poll() {
         channelBlocking(false)
         cancelShell()
@@ -132,9 +130,6 @@ public extension SSH {
             }
         }
         socketShell?.setCancelHandler { [self] in
-            if isRead {
-                sendEOF()
-            }
             channelDelegate?.connect(ssh: self, online: false)
         }
         socketShell?.resume()
