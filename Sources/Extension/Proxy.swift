@@ -70,7 +70,7 @@ public struct ProxyConfiguration {
             guard fd.write(&greeting, greeting.count) == greeting.count else {
                 return false
             }
-            var response: Buffer<UInt8> = .init(2)
+            let response: Buffer<UInt8> = .init(2)
             guard fd.read(response.buffer, response.count) == response.count else {
                 return false
             }
@@ -87,7 +87,7 @@ public struct ProxyConfiguration {
                 guard fd.write(&authRequest, authRequest.count) == authRequest.count else {
                     return false
                 }
-                var response: Buffer<UInt8> = .init(2)
+                let response: Buffer<UInt8> = .init(2)
                 guard fd.read(response.buffer, response.count) == response.count else {
                     return false
                 }
@@ -123,7 +123,7 @@ public struct ProxyConfiguration {
             guard fd.write(&request, request.count) == request.count else {
                 return false
             }
-            var connectResponse: Buffer<UInt8> = .init(10)
+            let connectResponse: Buffer<UInt8> = .init(10)
             guard fd.read(connectResponse.buffer, connectResponse.count) == connectResponse.count else {
                 return false
             }
