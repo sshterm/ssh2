@@ -103,19 +103,11 @@ public class SSH {
         libssh2_init(0)
     }
 
-    public init(_ host: String) throws {
-        let components = host.split(separator: "@").map { String($0) }
-        let hostAndPort = components.last?.split(separator: ":").map { String($0) } ?? []
-        let host = hostAndPort.first ?? ""
-        let portString = hostAndPort.count > 1 ? hostAndPort[1] : nil
-        let port = portString != nil ? portString! : "22"
-        let username = components.first ?? "root"
-        if host.isEmpty {
-            try NSError(domain: "ssh2.app", code: -1)
-        }
-        self.host = host
-        self.port = port
-        user = username
+    public init(_ host: String) {
+        let url = URL(string: host.hasSuffix("ssh://") ? host : "ssh://\(host)")
+        self.host = url?.host ?? ""
+        port = String(format: "%d", url?.port ?? 22)
+        user = url?.user ?? "root"
         timeout = 5
         compress = true
         libssh2_init(0)
