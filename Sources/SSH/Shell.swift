@@ -106,12 +106,12 @@ public extension SSH {
     /// or the read operation is complete, the shell is canceled. The cancel handler
     /// notifies the delegate that the connection is offline and sends an EOF signal.
     ///
-    /// - Note: This function assumes that `sockfd`, `queue`, `onData`, `isPol`, `isPolError`,
+    /// - Note: This function assumes that `socket`, `queue`, `onData`, `isPol`, `isPolError`,
     ///   `isRead`, `cancelShell`, `channelDelegate`, and `sendEOF` are defined elsewhere in the class.
     private func poll() {
         channelBlocking(false)
         cancelShell()
-        socketShell = DispatchSource.makeReadSource(fileDescriptor: sockfd, queue: queue)
+        socketShell = DispatchSource.makeReadSource(fileDescriptor: socket, queue: queue)
         socketShell?.setEventHandler { [self] in
             let (rc, erc) = read(PipeOutputStream(callback: { data in
                 onData(data, true)

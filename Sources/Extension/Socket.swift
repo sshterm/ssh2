@@ -1,4 +1,4 @@
-// SockFD.swift
+// Socket.swift
 // Copyright (c) 2025 ssh2.app
 // Created by admin@ssh2.app 2025/1/19.
 
@@ -6,9 +6,9 @@ import Darwin
 import Foundation
 import Network
 
-public typealias SockFD = Int32
+public typealias Socket = Int32
 
-public extension SockFD {
+public extension Socket {
     /// A computed property that checks if the socket is connected.
     ///
     /// This property returns `true` if the socket is connected, and `false` otherwise.
@@ -58,32 +58,13 @@ public extension SockFD {
     ///   - timeout: The timeout value in seconds for the connection.
     ///   - proxy: An optional `ProxyConfiguration` object for connecting through a proxy.
     ///
-    /// - Returns: A socket file descriptor (`SockFD`) on success, or `-1` on failure.
-    static func create(_ host: String, _ port: String, _ timeout: Int, proxy: ProxyConfiguration? = nil) -> SockFD {
-        var hints = Darwin.addrinfo()
-        hints.ai_family = AF_UNSPEC
-        hints.ai_socktype = SOCK_STREAM
-        hints.ai_flags = AI_ADDRCONFIG | AI_CANONNAME
-        hints.ai_protocol = IPPROTO_TCP
-
-        var addrInfo: UnsafeMutablePointer<addrinfo>?
-        let result = Darwin.getaddrinfo(proxy?.host ?? host, proxy?.port ?? port, &hints, &addrInfo)
-        guard result == 0, let addr = addrInfo else {
-            return -1
-        }
-
-        defer {
-            Darwin.freeaddrinfo(addrInfo)
-        }
-
+    /// - Returns: A socket file descriptor (`Sock`) on success, or `-1` on failure.
+    static func create(_ host: String, _ port: String, _ timeout: Int, proxy: ProxyConfiguration? = nil) -> Socket {
         var fd: Int32 = -1
-        for info in sequence(first: addr, next: { $0?.pointee.ai_next }) {
-            guard let info else {
-                continue
-            }
+        IP.getAddrInfo(host: proxy?.host ?? host, port: proxy?.port ?? port) { info in
             fd = Darwin.socket(info.pointee.ai_family, info.pointee.ai_socktype, info.pointee.ai_protocol)
             if fd < 0 {
-                continue
+                return false
             }
 
             var timeoutStruct = Darwin.timeval(tv_sec: timeout, tv_usec: 0)
@@ -92,24 +73,24 @@ public extension SockFD {
             if Darwin.connect(fd, info.pointee.ai_addr, info.pointee.ai_addrlen) != 0 {
                 fd.close()
                 fd = -1
-                continue
+                return false
             }
             if let proxy {
                 let ips = IP.resolveDomainName(host)
                 guard ips.count > 0 else {
                     fd.close()
                     fd = -1
-                    continue
+                    return false
                 }
 
                 if !proxy.connect(fd: fd, host: ips[0], port: port) {
                     fd.close()
                     fd = -1
-                    continue
+                    return false
                 }
             }
 
-            break
+            return true
         }
         return fd
     }

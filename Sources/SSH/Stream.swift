@@ -289,9 +289,9 @@ class ChannelOutputStream: OutputStream {
 }
 
 class SocketOutput: OutputStream {
-    let fd: SockFD
+    let fd: Socket
     var nwrite: Int = 0
-    init(_ fd: SockFD) {
+    init(_ fd: Socket) {
         self.fd = fd
         super.init()
     }
@@ -311,9 +311,9 @@ class SocketOutput: OutputStream {
 }
 
 class SocketInput: InputStream {
-    let fd: SockFD
+    let fd: Socket
     var nread: Int = 0
-    init(_ fd: SockFD) {
+    init(_ fd: Socket) {
         self.fd = fd
         super.init()
     }

@@ -15,10 +15,10 @@ public extension SSH {
     ///
     /// - Returns: `true` if the socket is connected, `false` otherwise.
     var isConnected: Bool {
-        guard sockfd != -1 else {
+        guard socket != -1 else {
             return false
         }
-        return sockfd.isConnected
+        return socket.isConnected
     }
 
     /// Asynchronously connects to a socket.
@@ -29,12 +29,12 @@ public extension SSH {
     ///
     /// - Parameter sockfd: The socket file descriptor to connect to.
     /// - Returns: A boolean value indicating whether the connection was successful.
-    func connect(sockfd: SockFD) async -> Bool {
+    func connect(sockfd: Socket) async -> Bool {
         await call { [self] in
             guard sockfd != -1 else {
                 return false
             }
-            self.sockfd = sockfd
+            self.socket = sockfd
             return isConnected
         }
     }
@@ -48,11 +48,11 @@ public extension SSH {
     /// - Returns: A `Bool` indicating whether the connection was successfully established.
     func connect() async -> Bool {
         await call { [self] in
-            let sockfd: SockFD = .create(host, port, timeout, proxy: proxy)
+            let sockfd: Socket = .create(host, port, timeout, proxy: proxy)
             guard sockfd != -1 else {
                 return false
             }
-            self.sockfd = sockfd
+            self.socket = sockfd
             return isConnected
         }
     }
@@ -65,7 +65,7 @@ public extension SSH {
     ///   - length: The length of the data to be sent.
     ///   - flags: Flags that influence the behavior of the send operation.
     /// - Returns: The number of bytes sent, or a negative error code if the send operation fails.
-    func send(socket: SockFD, buffer: UnsafeRawPointer, length: size_t, flags: CInt) -> Int {
+    func send(socket: Socket, buffer: UnsafeRawPointer, length: size_t, flags: CInt) -> Int {
         let size = socket.send(buffer, length, flags)
         if size > 0 {
             addOperation {
@@ -83,7 +83,7 @@ public extension SSH {
     ///   - length: The maximum number of bytes to receive.
     ///   - flags: Flags that influence the behavior of the receive operation.
     /// - Returns: The number of bytes received, or a negative error code if the operation fails.
-    func recv(socket: SockFD, buffer: UnsafeMutableRawPointer, length: size_t, flags: CInt) -> Int {
+    func recv(socket: Socket, buffer: UnsafeMutableRawPointer, length: size_t, flags: CInt) -> Int {
         let size = socket.recv(buffer, length, flags)
         if size > 0 {
             addOperation {
@@ -99,10 +99,10 @@ public extension SSH {
     ///   The default value is `.rw`, which shuts down both reading and writing.
     ///   If `.rw` is specified, the socket will also be closed.
     func shutdown(_ how: Shout = .rw) {
-        if sockfd != -1 {
-            sockfd.shutdown(how)
+        if socket != -1 {
+            socket.shutdown(how)
             if how == .rw {
-                sockfd = -1
+                socket = -1
             }
         }
     }
@@ -116,10 +116,10 @@ public extension SSH {
     ///   - `-1` if the session or socket file descriptor is invalid.
     ///   - The result of the `poll` call otherwise.
     func waitsocket() -> Int32 {
-        guard rawSession != nil, sockfd != -1 else {
+        guard rawSession != nil, socket != -1 else {
             return -1
         }
-        var sockets = [pollfd(fd: sockfd, events: 0, revents: 0)]
+        var sockets = [pollfd(fd: socket, events: 0, revents: 0)]
         let dir = libssh2_session_block_directions(rawSession)
         if dir & LIBSSH2_SESSION_BLOCK_INBOUND != 0 {
             sockets[0].events |= Int16(POLLIN)

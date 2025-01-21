@@ -30,7 +30,7 @@ public class SSH {
 
     /// A public variable representing the socket file descriptor.
     /// It is initialized to `-1`.
-    public var sockfd: SockFD = -1
+    public var socket: Socket = -1
     public let host: String
     public let port: String
     public let user: String

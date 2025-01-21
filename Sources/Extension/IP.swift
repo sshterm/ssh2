@@ -171,27 +171,50 @@ public extension IP {
             return [domain]
         }
         var results = [IP]()
-        var hints = addrinfo()
+        getAddrInfo(host: domain) { info in
+            var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+            if Darwin.getnameinfo(info.pointee.ai_addr, info.pointee.ai_addrlen, &hostname, socklen_t(hostname.count), nil, 0, NI_NUMERICHOST) == 0 {
+                results.append(hostname.string)
+            }
+            return false
+        }
+        return results
+    }
+
+    /// The `getAddrInfo` static method retrieves address information for a given host and optional port.
+    ///
+    /// - Parameters:
+    ///   - host: The hostname or IP address to resolve.
+    ///   - port: (Optional) The port number to be used in the address resolution. If not provided, the default port will be used.
+    ///   - callback: A closure that takes an `UnsafeMutablePointer<addrinfo>` as its parameter. This closure will be called for each address information structure retrieved. If the closure returns `true`, the iteration will stop.
+    ///
+    /// - Description:
+    ///   This method uses the `getaddrinfo` function to resolve the given host and port into a linked list of `addrinfo` structures. It then iterates over this list, calling the provided callback for each structure. If the callback returns `true`, the iteration stops. The method ensures that allocated memory for address information is freed using `freeaddrinfo` before it completes.
+    ///
+    /// - Note:
+    ///   This method uses the Darwin framework's `addrinfo` and related functions, which are part of the POSIX standard for network programming on Unix-like operating systems.
+    static func getAddrInfo(host: String, port: String? = nil, _ callback: @escaping (UnsafeMutablePointer<addrinfo>) -> Bool) {
+        var hints = Darwin.addrinfo()
         hints.ai_family = AF_UNSPEC
         hints.ai_socktype = SOCK_STREAM
-        hints.ai_flags = AI_PASSIVE
+        hints.ai_flags = AI_ADDRCONFIG | AI_CANONNAME
         hints.ai_protocol = IPPROTO_TCP
-        var infoPointer: UnsafeMutablePointer<addrinfo>?
-        let status = getaddrinfo(domain, nil, &hints, &infoPointer)
-        if status == 0 {
-            var pointer = infoPointer
-            while pointer != nil {
-                if let addr = pointer?.pointee.ai_addr {
-                    var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-                    if getnameinfo(addr, socklen_t(addr.pointee.sa_len), &hostname, socklen_t(hostname.count), nil, 0, NI_NUMERICHOST) == 0 {
-                        results.append(hostname.string)
-                    }
-                }
-                pointer = pointer?.pointee.ai_next
-            }
-            freeaddrinfo(infoPointer)
-        }
 
-        return results
+        var addrInfo: UnsafeMutablePointer<Darwin.addrinfo>?
+        let result = Darwin.getaddrinfo(host, port, &hints, &addrInfo)
+        guard result == 0, addrInfo != nil else {
+            return
+        }
+        defer {
+            Darwin.freeaddrinfo(addrInfo)
+        }
+        for info in sequence(first: addrInfo, next: { $0?.pointee.ai_next }) {
+            guard let info else {
+                continue
+            }
+            if callback(info) {
+                break
+            }
+        }
     }
 }

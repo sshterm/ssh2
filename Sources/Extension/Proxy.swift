@@ -41,7 +41,7 @@ public struct ProxyConfiguration {
     /// - Returns: A `Bool` indicating whether the connection was successful.
     ///
     /// - Throws: This method does not throw exceptions but returns `false` if any step of the connection process fails.
-    func connect(fd: SockFD, host: String, port: String) -> Bool {
+    func connect(fd: Socket, host: String, port: String) -> Bool {
         guard host.isIP else {
             return false
         }

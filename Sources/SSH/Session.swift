@@ -30,13 +30,13 @@ public extension SSH {
                 return false
             }
             c.append([0x0D, 0x0A], count: 2)
-            guard sockfd.write(c.bytes, c.count) == c.count else {
+            guard socket.write(c.bytes, c.count) == c.count else {
                 return false
             }
             let buf: Buffer<UInt8> = .init(1)
             var data = Data()
             for _ in 0 ... 3 {
-                guard sockfd.read(buf.buffer, 1) == 1 else {
+                guard socket.read(buf.buffer, 1) == 1 else {
                     return false
                 }
                 data.append(buf.buffer, count: 1)
@@ -98,7 +98,7 @@ public extension SSH {
             libssh2_session_set_timeout(rawSession, timeout * 1000)
             libssh2_session_banner_set(rawSession, clientbanner)
             let rec = callSSH2 {
-                libssh2_session_handshake(rawSession, sockfd)
+                libssh2_session_handshake(rawSession, socket)
             }
             guard rec == LIBSSH2_ERROR_NONE else {
                 freeSession()
