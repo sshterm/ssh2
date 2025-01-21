@@ -146,8 +146,8 @@ public extension SSH {
         defer {
             lockRow.unlock()
         }
-        self.channelDelegate = nil
-        self.sessionDelegate = nil
+        channelDelegate = nil
+        sessionDelegate = nil
         free()
         shutdown(.rw)
     }

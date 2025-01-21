@@ -1,6 +1,6 @@
 // Call.swift
 // Copyright (c) 2025 ssh2.app
-// Created by admin@ssh2.app 2024/8/16.
+// Created by admin@ssh2.app 2025/1/19.
 
 import CSSH
 import Foundation
@@ -36,7 +36,7 @@ extension SSH {
     func callSSH2<T>(_ wait: Bool = true, _ callback: @escaping () -> T) -> T where T: FixedWidthInteger {
         var ret: T
         lockSSH2.lock()
-        defer{
+        defer {
             lockSSH2.unlock()
         }
         repeat {
@@ -61,7 +61,7 @@ extension SSH {
     func callSSH2<T>(_ wait: Bool = true, _ callback: @escaping () -> T) -> T {
         var ret: T
         lockSSH2.lock()
-        defer{
+        defer {
             lockSSH2.unlock()
         }
         repeat {

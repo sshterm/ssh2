@@ -149,7 +149,7 @@ public extension SSH {
         guard data.count > 0 else {
             return
         }
-        addOperation {[self] in
+        addOperation { [self] in
             await stdout ? channelDelegate?.stdout(ssh: self, data: data) : channelDelegate?.dtderr(ssh: self, data: data)
         }
     }

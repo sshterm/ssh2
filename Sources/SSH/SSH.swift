@@ -113,9 +113,9 @@ public class SSH {
         }
         self.host = host
         self.port = port
-        self.user = username
-        self.timeout = 5
-        self.compress = true
+        user = username
+        timeout = 5
+        compress = true
         libssh2_init(0)
     }
 

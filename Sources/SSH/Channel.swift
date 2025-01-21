@@ -153,14 +153,22 @@ public extension SSH {
         }
     }
 
-    /// Reads data from the SSH channel and writes it to the provided output stream.
+    /// Reads data from the channel and writes it to the specified output stream.
     ///
     /// - Parameters:
     ///   - output: The `OutputStream` to which the data will be written.
-    ///   - err: A Boolean value indicating whether to read from the error stream. Defaults to `false`.
-    /// - Returns: The number of bytes read, or `-1` if the channel is not available.
-    func read(_ output: OutputStream, err: Bool = false) -> Int {
-        let rc = io.Copy(output, ChannelInputStream(ssh: self, err: err), bufferSize)
+    ///   - err: A boolean flag indicating whether to read from the error stream instead of the standard output stream.
+    ///   - wait: A boolean flag indicating whether the function should wait until all data is read before returning.
+    /// - Returns: The number of bytes copied to the output stream. Returns `-1` if an error occurs.
+    ///
+    /// This function uses `io.Copy` to transfer data from the channel's input stream to the provided output stream.
+    /// The `ChannelInputStream` is initialized with the current channel instance, the error flag, and a wait flag set to `false`.
+    /// The `bufferSize` determines the size of the buffer used during the copy operation.
+    ///
+    /// - Note: If `err` is `true`, the function reads from the error stream; otherwise, it reads from the standard output stream.
+    /// - Warning: If `wait` is `true`, the function may block until all data is available.
+    func read(_ output: OutputStream, err: Bool = false, wait: Bool) -> Int {
+        let rc = io.Copy(output, ChannelInputStream(ssh: self, err: err, wait: wait), bufferSize)
         return rc
     }
 
@@ -172,8 +180,8 @@ public extension SSH {
     /// - Returns: A tuple containing the number of bytes read from the standard output and standard error streams.
     func read(_ stdout: OutputStream, _ stderr: OutputStream) -> (Int, Int) {
         var rc, erc: Int
-        rc = read(stdout)
-        erc = read(stderr, err: true)
+        rc = read(stdout, wait: false)
+        erc = read(stderr, err: true, wait: false)
         return (rc, erc)
     }
 
