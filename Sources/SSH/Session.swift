@@ -107,9 +107,15 @@ public extension SSH {
             guard let hostkey else {
                 return false
             }
-            guard sessionDelegate?.connect(ssh: self, pubkey: hostkey) ?? true else {
+            guard sessionDelegate?.handshake(ssh: self, pubkey: hostkey) ?? true else {
                 freeSession()
                 return false
+            }
+
+            defer {
+                addOperation {
+                    sessionDelegate?.authenticate(ssh: self)
+                }
             }
 
             return true

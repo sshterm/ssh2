@@ -12,13 +12,31 @@ public protocol SessionDelegate {
     ///   - message: An optional data message to be sent before disconnecting.
     func disconnect(ssh: SSH, message: Data)
 
-    /// Establishes a connection to the SSH server using the provided public key.
+    /// Performs the SSH handshake to establish a connection with the SSH server.
     ///
     /// - Parameters:
-    ///   - ssh: An instance of the `SSH` class representing the SSH connection.
-    ///   - pubkey: The public key of the server.
-    /// - Returns: A boolean value indicating whether the connection was accepted.
-    func connect(ssh: SSH, pubkey: Hostkey) -> Bool
+    ///   - ssh: The `SSH` instance representing the connection to the SSH server.
+    ///   - pubkey: The `Hostkey` of the SSH server used for authentication.
+    /// - Returns: A boolean indicating whether the handshake was successful (`true`) or failed (`false`).
+    ///
+    /// This method initiates the SSH handshake process, which includes negotiating the protocol version,
+    /// exchanging encryption keys, and verifying the server's host key.
+    ///
+    /// - Note: The handshake process is critical for establishing a secure connection. Failure to complete
+    ///   the handshake successfully will result in an insecure or non-functional SSH connection.
+    func handshake(ssh: SSH, pubkey: Hostkey) -> Bool
+
+    /// Authenticates the user with the SSH server using the provided credentials.
+    ///
+    /// - Parameters:
+    ///   - ssh: The `SSH` instance representing the connection to the SSH server.
+    /// - Returns: Void.
+    ///
+    /// This method handles the authentication process with the SSH server. Depending on the implementation,
+    /// it may support various authentication methods such as password, public key, or keyboard-interactive.
+    ///
+    /// - Warning: Authentication failure may result in denied access to the SSH server.
+    func authenticate(ssh: SSH)
 
     /// Called when a keyboard-interactive authentication prompt is received.
     /// - Parameters:

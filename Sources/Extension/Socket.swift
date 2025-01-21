@@ -59,8 +59,9 @@ public extension Socket {
     ///   - proxy: An optional `ProxyConfiguration` object for connecting through a proxy.
     ///
     /// - Returns: A socket file descriptor (`Sock`) on success, or `-1` on failure.
-    static func create(_ host: String, _ port: String, _ timeout: Int, proxy: ProxyConfiguration? = nil) -> Socket {
+    static func create(_ host: String, _ port: String, _ timeout: Int, proxy: ProxyConfiguration? = nil) -> (Socket, IP) {
         var fd: Int32 = -1
+        var hostname = ""
         IP.getAddrInfo(host: proxy?.host ?? host, port: proxy?.port ?? port) { info in
             fd = Darwin.socket(info.pointee.ai_family, info.pointee.ai_socktype, info.pointee.ai_protocol)
             if fd < 0 {
@@ -89,10 +90,16 @@ public extension Socket {
                     return false
                 }
             }
-
+            var name = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+            guard Darwin.getnameinfo(info.pointee.ai_addr, info.pointee.ai_addrlen, &name, socklen_t(name.count), nil, 0, NI_NUMERICHOST) == 0 else {
+                fd.close()
+                fd = -1
+                return false
+            }
+            hostname = name.string
             return true
         }
-        return fd
+        return (fd, hostname)
     }
 
     /// Sends data through the socket.
