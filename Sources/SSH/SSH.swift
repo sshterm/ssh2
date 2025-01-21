@@ -104,7 +104,7 @@ public class SSH {
     }
 
     public init(_ host: String) {
-        let url = URL(string: host.hasPrefix("ssh://") ? host : "ssh://\(host)")
+        let url = URL(string: host.withPrefix("ssh://"))
         self.host = url?.host ?? ""
         port = String(format: "%d", url?.port ?? 22)
         user = url?.user ?? "root"
