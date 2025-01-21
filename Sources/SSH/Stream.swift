@@ -240,18 +240,20 @@ class PipeOutputStream: OutputStream {
 }
 
 class ChannelInputStream: InputStream {
-    let handle: OpaquePointer
+    var ssh: SSH
     let err: Bool
     var nread: Int = 0
 
-    init(handle: OpaquePointer, err: Bool = false) {
-        self.handle = handle
+    init(ssh: SSH, err: Bool = false) {
+        self.ssh = ssh
         self.err = err
         super.init()
     }
 
     override func read(_ buffer: UnsafeMutablePointer<UInt8>, maxLength len: Int) -> Int {
-        nread = libssh2_channel_read_ex(handle, err ? SSH_EXTENDED_DATA_STDERR : 0, buffer, len)
+        nread = ssh.callSSH2(false){ [self] in
+            libssh2_channel_read_ex(ssh.rawChannel, err ? SSH_EXTENDED_DATA_STDERR : 0, buffer, len)
+        }
         return nread
     }
 
@@ -260,22 +262,24 @@ class ChannelInputStream: InputStream {
     override func close() {}
 
     override var hasBytesAvailable: Bool {
-        nread >= 0
+        ssh.rawChannel != nil && nread >= 0
     }
 }
 
 class ChannelOutputStream: OutputStream {
-    let handle: OpaquePointer
+    var ssh: SSH
     let err: Bool
     var nwrite: Int = 0
-    init(handle: OpaquePointer, err: Bool = false) {
-        self.handle = handle
+    init(ssh: SSH, err: Bool = false) {
+        self.ssh = ssh
         self.err = err
         super.init()
     }
 
     override func write(_ buffer: UnsafePointer<UInt8>, maxLength len: Int) -> Int {
-        nwrite = libssh2_channel_write_ex(handle, err ? SSH_EXTENDED_DATA_STDERR : 0, buffer, len)
+        nwrite = ssh.callSSH2(false){ [self] in
+            libssh2_channel_write_ex(ssh.rawChannel, err ? SSH_EXTENDED_DATA_STDERR : 0, buffer, len)
+        }
         return nwrite
     }
 
@@ -284,7 +288,7 @@ class ChannelOutputStream: OutputStream {
     override func close() {}
 
     override var hasSpaceAvailable: Bool {
-        nwrite >= 0
+        ssh.rawChannel != nil && nwrite >= 0
     }
 }
 

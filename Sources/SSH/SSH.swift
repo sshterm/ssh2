@@ -101,6 +101,24 @@ public class SSH {
         libssh2_init(0)
     }
 
+    public init(_ host: String) throws {
+        let components = host.split(separator: "@").map { String($0) }
+        let hostAndPort = components.last?.split(separator: ":").map { String($0) } ?? []
+        let host = hostAndPort.first ?? ""
+        let portString = hostAndPort.count > 1 ? hostAndPort[1] : nil
+        let port = portString != nil ? portString! : "22"
+        let username = components.first ?? "root"
+        if host.isEmpty {
+            try NSError(domain: "ssh2.app", code: -1)
+        }
+        self.host = host
+        self.port = port
+        self.user = username
+        self.timeout = 5
+        self.compress = true
+        libssh2_init(0)
+    }
+
     /// Deinitializer for the SSH class.
     ///
     /// This method is called when the instance of the SSH class is being deallocated.

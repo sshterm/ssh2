@@ -40,7 +40,7 @@ public class io {
             r.close()
         }
 
-        let buffer: Buffer<CChar> = .init(bufferSize)
+        let buffer: Buffer<UInt8> = .init(bufferSize)
         var total = 0
         var nread, rc: Int
         while r.hasBytesAvailable {

@@ -158,15 +158,9 @@ public extension SSH {
     /// - Parameters:
     ///   - output: The `OutputStream` to which the data will be written.
     ///   - err: A Boolean value indicating whether to read from the error stream. Defaults to `false`.
-    ///   - wait: A Boolean value indicating whether to wait for the read operation to complete. Defaults to `true`.
     /// - Returns: The number of bytes read, or `-1` if the channel is not available.
-    func read(_ output: OutputStream, err: Bool = false, wait: Bool = true) -> Int {
-        guard let rawChannel else {
-            return -1
-        }
-        let rc = callSSH2(wait) { [self] in
-            return io.Copy(output, ChannelInputStream(handle: rawChannel, err: err), bufferSize)
-        }
+    func read(_ output: OutputStream, err: Bool = false) -> Int {
+        let rc = io.Copy(output, ChannelInputStream(ssh: self, err: err), bufferSize)
         return rc
     }
 
@@ -178,8 +172,8 @@ public extension SSH {
     /// - Returns: A tuple containing the number of bytes read from the standard output and standard error streams.
     func read(_ stdout: OutputStream, _ stderr: OutputStream) -> (Int, Int) {
         var rc, erc: Int
-        rc = read(stdout, wait: false)
-        erc = read(stderr, err: true, wait: false)
+        rc = read(stdout)
+        erc = read(stderr, err: true)
         return (rc, erc)
     }
 
@@ -314,10 +308,8 @@ public extension SSH {
     ///         to ensure proper cleanup and resource management.
     func freeChannel() {
         if let rawChannel {
-            if isRead {
-                sendEOF()
-            }
             libssh2_channel_set_blocking(rawChannel, 0)
+            sendEOF()
             lockSSH2.lock()
             defer {
                 lockSSH2.unlock()

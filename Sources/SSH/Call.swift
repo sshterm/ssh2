@@ -35,10 +35,12 @@ extension SSH {
     /// - Important: This function locks the SSH2 resource before executing the callback and unlocks it after the callback completes.
     func callSSH2<T>(_ wait: Bool = true, _ callback: @escaping () -> T) -> T where T: FixedWidthInteger {
         var ret: T
-        repeat {
-            lockSSH2.lock()
-            ret = callback()
+        lockSSH2.lock()
+        defer{
             lockSSH2.unlock()
+        }
+        repeat {
+            ret = callback()
             guard wait, ret == LIBSSH2_ERROR_EAGAIN else { break }
             guard waitsocket() > 0 else { break }
         } while true
@@ -58,10 +60,12 @@ extension SSH {
 
     func callSSH2<T>(_ wait: Bool = true, _ callback: @escaping () -> T) -> T {
         var ret: T
-        repeat {
-            lockSSH2.lock()
-            ret = callback()
+        lockSSH2.lock()
+        defer{
             lockSSH2.unlock()
+        }
+        repeat {
+            ret = callback()
             guard wait, rawSession != nil, libssh2_session_last_errno(rawSession) == LIBSSH2_ERROR_EAGAIN else { break }
             guard waitsocket() > 0 else { break }
         } while true
@@ -87,6 +91,7 @@ extension SSH {
                 await callback()
             }
         }
+        job.addOperation(operation)
     }
 
     /// Traces a message by converting it from a C-style string to a Swift string and passing it to the session delegate.

@@ -27,7 +27,6 @@ public extension SSH {
             addOperation {
                 channelDelegate?.connect(ssh: self, online: true)
             }
-            resumePoll()
             return true
         }
     }
@@ -138,6 +137,7 @@ public extension SSH {
             }
             channelDelegate?.connect(ssh: self, online: false)
         }
+        socketShell?.resume()
     }
 
     /// Handles incoming data from the SSH channel.
@@ -149,8 +149,8 @@ public extension SSH {
         guard data.count > 0 else {
             return
         }
-        addOperation {
-            await stdout ? self.channelDelegate?.stdout(ssh: self, data: data) : self.channelDelegate?.dtderr(ssh: self, data: data)
+        addOperation {[self] in
+            await stdout ? channelDelegate?.stdout(ssh: self, data: data) : channelDelegate?.dtderr(ssh: self, data: data)
         }
     }
 
