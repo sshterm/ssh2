@@ -71,7 +71,7 @@ public struct ProxyConfiguration {
                 return false
             }
             var response: Buffer<UInt8> = .init(2)
-            guard fd.read(response.buffer, response.count) == 2 else {
+            guard fd.read(response.buffer, response.count) == response.count else {
                 return false
             }
             guard response.buffer[0] == 0x05 else {
@@ -88,7 +88,7 @@ public struct ProxyConfiguration {
                     return false
                 }
                 var response: Buffer<UInt8> = .init(2)
-                guard fd.read(response.buffer, response.count) == 2 else {
+                guard fd.read(response.buffer, response.count) == response.count else {
                     return false
                 }
                 guard response.buffer[0] == 0x05 else {
@@ -124,7 +124,7 @@ public struct ProxyConfiguration {
                 return false
             }
             var connectResponse: Buffer<UInt8> = .init(10)
-            guard fd.read(connectResponse.buffer, connectResponse.count) == 10 else {
+            guard fd.read(connectResponse.buffer, connectResponse.count) == connectResponse.count else {
                 return false
             }
             guard connectResponse.buffer[0] == 0x05 else {
