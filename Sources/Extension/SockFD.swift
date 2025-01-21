@@ -1,9 +1,10 @@
 // SockFD.swift
 // Copyright (c) 2025 ssh2.app
-// Created by admin@ssh2.app 2025/1/18.
+// Created by admin@ssh2.app 2025/1/19.
 
 import Darwin
 import Foundation
+import Network
 
 public typealias SockFD = Int32
 
@@ -49,15 +50,16 @@ public extension SockFD {
         }
     }
 
-    /// Creates a socket file descriptor and connects it to the specified host and port with a timeout.
+    /// Creates a socket file descriptor for the specified host and port, with an optional proxy configuration and timeout.
     ///
     /// - Parameters:
     ///   - host: The hostname or IP address to connect to.
     ///   - port: The port number to connect to.
-    ///   - timeout: The timeout duration in seconds for the connection attempt.
+    ///   - timeout: The timeout value in seconds for the connection.
+    ///   - proxy: An optional `ProxyConfiguration` object for connecting through a proxy.
     ///
-    /// - Returns: A socket file descriptor on success, or -1 on failure.
-    static func create(_ host: String, _ port: String, _ timeout: Int) -> SockFD {
+    /// - Returns: A socket file descriptor (`SockFD`) on success, or `-1` on failure.
+    static func create(_ host: String, _ port: String, _ timeout: Int, proxy: ProxyConfiguration? = nil) -> SockFD {
         var hints = Darwin.addrinfo()
         hints.ai_family = AF_UNSPEC
         hints.ai_socktype = SOCK_STREAM
@@ -65,7 +67,7 @@ public extension SockFD {
         hints.ai_protocol = IPPROTO_TCP
 
         var addrInfo: UnsafeMutablePointer<addrinfo>?
-        let result = Darwin.getaddrinfo(host, port, &hints, &addrInfo)
+        let result = Darwin.getaddrinfo(proxy?.host ?? host, proxy?.port ?? port, &hints, &addrInfo)
         guard result == 0, let addr = addrInfo else {
             return -1
         }
@@ -87,15 +89,28 @@ public extension SockFD {
             var timeoutStruct = Darwin.timeval(tv_sec: timeout, tv_usec: 0)
             setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &timeoutStruct, socklen_t(MemoryLayout<Darwin.timeval>.size))
             setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeoutStruct, socklen_t(MemoryLayout<Darwin.timeval>.size))
+            if Darwin.connect(fd, info.pointee.ai_addr, info.pointee.ai_addrlen) != 0 {
+                fd.close()
+                fd = -1
+                continue
+            }
+            if let proxy {
+                let ips = IP.resolveDomainName(host)
+                guard ips.count > 0 else {
+                    fd.close()
+                    fd = -1
+                    continue
+                }
 
-            if Darwin.connect(fd, info.pointee.ai_addr, info.pointee.ai_addrlen) == 0 {
-                break
+                if !proxy.connect(fd: fd, host: ips[0], port: port) {
+                    fd.close()
+                    fd = -1
+                    continue
+                }
             }
 
-            fd.close()
-            fd = -1
+            break
         }
-
         return fd
     }
 
@@ -160,17 +175,37 @@ public extension SockFD {
     }
 }
 
+/// An enumeration representing the type of shutdown operation to perform on a socket.
+///
+/// This enum defines three cases, each corresponding to a different type of shutdown operation:
+/// - `.r`: Shutdown the read half of the socket.
+/// - `.w`: Shutdown the write half of the socket.
+/// - `.rw`: Shutdown both the read and write halves of the socket.
+///
+/// The `raw` computed property returns the corresponding POSIX shutdown constant for each case.
+///
+/// - SeeAlso: `shutdown` function in POSIX sockets.
 public enum Shout {
-    case r, w, rw
+    /// Shutdown the read half of the socket.
+    case r
 
+    /// Shutdown the write half of the socket.
+    case w
+
+    /// Shutdown both the read and write halves of the socket.
+    case rw
+
+    /// The raw POSIX shutdown constant corresponding to the enum case.
+    ///
+    /// - Returns: An `Int32` representing the POSIX shutdown constant.
     var raw: Int32 {
         switch self {
         case .r:
-            SHUT_RD
+            return SHUT_RD
         case .w:
-            SHUT_WR
+            return SHUT_WR
         case .rw:
-            SHUT_RDWR
+            return SHUT_RDWR
         }
     }
 }

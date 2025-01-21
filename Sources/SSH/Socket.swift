@@ -48,7 +48,7 @@ public extension SSH {
     /// - Returns: A `Bool` indicating whether the connection was successfully established.
     func connect() async -> Bool {
         await call { [self] in
-            let sockfd: SockFD = .create(host, port, timeout)
+            let sockfd: SockFD = .create(host, port, timeout, proxy: proxy)
             guard sockfd != -1 else {
                 return false
             }

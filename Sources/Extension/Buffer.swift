@@ -1,6 +1,6 @@
 // Buffer.swift
 // Copyright (c) 2025 ssh2.app
-// Created by admin@ssh2.app 2025/1/18.
+// Created by admin@ssh2.app 2025/1/19.
 
 import Foundation
 
@@ -22,7 +22,7 @@ public class Buffer<T> {
 
     /// The capacity of the buffer.
     /// This property represents the maximum number of elements that the buffer can hold.
-    public var capacity: Int
+    public var count: Int
 
     /// Initializes a buffer with the specified capacity.
     ///
@@ -32,7 +32,7 @@ public class Buffer<T> {
     /// - Note: The buffer is allocated using `UnsafeMutablePointer<T>.allocate`.
     public init(_ capacity: Int = MemoryLayout<T>.size) {
         buffer = UnsafeMutablePointer<T>.allocate(capacity: capacity)
-        self.capacity = capacity
+        count = capacity
     }
 
     deinit {
@@ -47,10 +47,6 @@ public extension Buffer {
     /// - Returns: A `Data` object containing the specified number of bytes.
     func data(_ count: Int) -> Data {
         Data(bytes: buffer, count: count)
-    }
-
-    var data: Data {
-        Data(bytes: buffer, count: strlen(buffer))
     }
 
     /// A computed property that returns the value pointed to by the buffer.

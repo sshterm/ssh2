@@ -6,7 +6,6 @@ import Darwin
 import Foundation
 
 public extension String {
-    /// Converts the String to an UnsafeMutablePointer<CChar>.
     var bytes: UnsafeMutablePointer<CChar> {
         Darwin.strdup(self)
     }

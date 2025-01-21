@@ -1,6 +1,6 @@
 // IP.swift
 // Copyright (c) 2025 ssh2.app
-// Created by admin@ssh2.app 2025/1/17.
+// Created by admin@ssh2.app 2025/1/19.
 
 import Darwin
 import Foundation
@@ -133,5 +133,63 @@ public extension IP {
     /// It returns `true` if the instance is either an IPv4 or IPv6 address.
     var isIP: Bool {
         isIPv4 || isIPv6
+    }
+
+    /// A computed property that returns the size of the IP address in bytes.
+    ///
+    /// - Returns: The size of the IP address in bytes, which is either the size of `in_addr` for IPv4 or `in6_addr` for IPv6.
+    var size: Int {
+        isIPv4 ? MemoryLayout<in_addr>.size : MemoryLayout<in6_addr>.size
+    }
+
+    /// A computed property that returns the address family of the IP address.
+    ///
+    /// - Returns: The address family as an `Int32`, which is `AF_INET` for IPv4 or `AF_INET6` for IPv6.
+    var af: Int32 {
+        isIPv4 ? AF_INET : AF_INET6
+    }
+
+    /// A computed property that returns the raw byte representation of the IP address.
+    ///
+    /// This property uses `inet_pton` to convert the IP address string into its binary form. The resulting `Data` object contains the raw bytes of the IP address, which can be useful for low-level network operations, serialization, or other byte-wise manipulations.
+    ///
+    /// - Returns: A `Data` object containing the raw bytes of the IP address.
+    var addr: Data {
+        var bytes = [UInt8](repeating: 0, count: size)
+        inet_pton(af, self, &bytes)
+        return Data(bytes)
+    }
+
+    /// Resolves the given domain name to a list of IP addresses.
+    ///
+    /// - Parameter domain: The domain name to resolve.
+    /// - Returns: An array of IP addresses associated with the given domain name.
+    static func resolveDomainName(_ domain: IP) -> [IP] {
+        if domain.isIP {
+            return [domain]
+        }
+        var results = [IP]()
+        var hints = addrinfo()
+        hints.ai_family = AF_UNSPEC
+        hints.ai_socktype = SOCK_STREAM
+        hints.ai_flags = AI_PASSIVE
+        hints.ai_protocol = IPPROTO_TCP
+        var infoPointer: UnsafeMutablePointer<addrinfo>?
+        let status = getaddrinfo(domain, nil, &hints, &infoPointer)
+        if status == 0 {
+            var pointer = infoPointer
+            while pointer != nil {
+                if let addr = pointer?.pointee.ai_addr {
+                    var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+                    if getnameinfo(addr, socklen_t(addr.pointee.sa_len), &hostname, socklen_t(hostname.count), nil, 0, NI_NUMERICHOST) == 0 {
+                        results.append(hostname.string)
+                    }
+                }
+                pointer = pointer?.pointee.ai_next
+            }
+            freeaddrinfo(infoPointer)
+        }
+
+        return results
     }
 }

@@ -59,7 +59,7 @@ public extension SSH {
             }
             let buf: Buffer<CChar> = .init(PATH_MAX.load())
             let rc = callSSH2 {
-                libssh2_sftp_symlink_ex(rawSFTP, path, path.count.load(), buf.buffer, buf.capacity.load(), LIBSSH2_SFTP_READLINK)
+                libssh2_sftp_symlink_ex(rawSFTP, path, path.count.load(), buf.buffer, buf.count.load(), LIBSSH2_SFTP_READLINK)
             }
             guard rc > 0 else {
                 return nil
@@ -84,7 +84,7 @@ public extension SSH {
             }
             let buf: Buffer<CChar> = .init(PATH_MAX.load())
             let rc = callSSH2 {
-                libssh2_sftp_symlink_ex(rawSFTP, path, path.count.load(), buf.buffer, buf.capacity.load(), LIBSSH2_SFTP_REALPATH)
+                libssh2_sftp_symlink_ex(rawSFTP, path, path.count.load(), buf.buffer, buf.count.load(), LIBSSH2_SFTP_REALPATH)
             }
             guard rc > 0 else {
                 return nil
@@ -368,18 +368,17 @@ public extension SSH {
             var data: [FileAttributes] = []
             var rc: Int32
             let maxLen = 512
-            let buffer: Buffer<CChar> = .init(maxLen)
-            let longEntry: Buffer<CChar> = .init(maxLen)
+            var buffer = [UInt8](repeating: 0, count: NAME_MAX.load())
+            var longEntry = [UInt8](repeating: 0, count: PATH_MAX.load())
             var attrs = LIBSSH2_SFTP_ATTRIBUTES()
             repeat {
                 rc = callSSH2 {
-                    libssh2_sftp_readdir_ex(handle, buffer.buffer, buffer.capacity, longEntry.buffer, longEntry.capacity, &attrs)
+                    libssh2_sftp_readdir_ex(handle, &buffer, buffer.count, &longEntry, longEntry.count, &attrs)
                 }
                 if rc > 0 {
-                    guard let name = buffer.data.string,!ignoredfiles.contains(name) else {
-                        continue
-                    }
-                    guard let longname = longEntry.data.string else {
+                    let name = String(cString: buffer)
+                    let longname = String(cString: longEntry)
+                    guard !ignoredfiles.contains(name) else {
                         continue
                     }
                     data.append(FileAttributes(name: name, longname: longname, attributes: attrs))

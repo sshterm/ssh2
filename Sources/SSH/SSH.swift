@@ -51,6 +51,8 @@ public class SSH {
     /// A string representing the banner message for the SSH session.
     public var banner = ""
 
+    public var proxy: ProxyConfiguration?
+
     /// A Boolean property that determines whether the SSH connection operates in blocking mode.
     ///
     /// When `true`, the connection will block the execution of the program until the operation completes.

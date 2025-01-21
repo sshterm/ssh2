@@ -144,7 +144,7 @@ public extension SSH {
         return await call { [self] in
             let buf: Buffer<UInt8> = .init(bufferSize)
             let count = callSSH2(wait) {
-                libssh2_channel_read_ex(rawChannel, stderr ? SSH_EXTENDED_DATA_STDERR : 0, buf.buffer, buf.capacity)
+                libssh2_channel_read_ex(rawChannel, stderr ? SSH_EXTENDED_DATA_STDERR : 0, buf.buffer, buf.count)
             }
             guard count >= 0 else {
                 return nil
