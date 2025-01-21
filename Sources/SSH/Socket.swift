@@ -1,6 +1,6 @@
 // Socket.swift
 // Copyright (c) 2025 ssh2.app
-// Created by admin@ssh2.app 2024/8/15.
+// Created by admin@ssh2.app 2025/1/19.
 
 import CSSH
 import Darwin
@@ -133,5 +133,20 @@ public extension SSH {
             print("阻塞:\(rc) 方向: \(dir)")
         #endif
         return rc
+    }
+
+    /// Closes the SSH connection by performing the following steps:
+    /// 1. Shuts down the read side of the connection.
+    /// 2. Locks the `lockRow` to ensure thread safety.
+    /// 3. Frees any allocated resources.
+    /// 4. Shuts down both the read and write sides of the connection.
+    func close() {
+        shutdown(.r)
+        lockRow.lock()
+        defer {
+            lockRow.unlock()
+        }
+        free()
+        shutdown(.rw)
     }
 }

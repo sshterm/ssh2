@@ -116,21 +116,18 @@ public extension SSH {
         }
     }
 
-    /// Starts the keepalive mechanism for the SSH session.
+    /// Starts a keepalive mechanism for the SSH session.
     ///
-    /// This function configures the keepalive settings for the SSH session and sets up a timer to periodically send keepalive messages to the server.
-    /// If the session is not authenticated or the keepalive settings are not properly configured, the function will return early without setting up the keepalive mechanism.
+    /// This function configures the keepalive settings for the SSH session and sets up a timer
+    /// to periodically send keepalive messages to the server. The keepalive interval can be
+    /// customized by providing a different value for the `keepaliveInterval` parameter.
     ///
-    /// The keepalive timer is scheduled to fire at the interval specified by `keepaliveInterval`. When the timer fires, the `sendKeepalive` function is called to send a keepalive message to the server.
-    ///
-    /// The function also sets up a cancel handler for the timer, which prints a debug message when the keepalive mechanism is stopped.
-    ///
-    /// - Note: This function should only be called after the SSH session has been successfully authenticated.
-    func startKeepalive() {
-        guard let rawSession, keepalive, isAuthenticated else {
+    /// - Parameter keepaliveInterval: The interval in seconds between keepalive messages. The default value is 5 seconds.
+    func keepalive(_ keepaliveInterval: Int = 5) {
+        guard let rawSession, isAuthenticated else {
             return
         }
-        libssh2_keepalive_config(rawSession, 1, UInt32(keepaliveInterval))
+        libssh2_keepalive_config(rawSession, 1, keepaliveInterval.load())
         cancelKeepalive()
         keepAliveSource = DispatchSource.makeTimerSource(queue: .global(qos: .background))
 
@@ -139,13 +136,11 @@ public extension SSH {
         }
         keepAliveSource.schedule(deadline: DispatchTime.now() + .seconds(keepaliveInterval), repeating: .seconds(keepaliveInterval), leeway: .seconds(keepaliveInterval))
 
-        keepAliveSource.setEventHandler {
-            self.sendKeepalive()
+        keepAliveSource.setEventHandler { [self] in
+            sendKeepalive()
         }
         keepAliveSource.setCancelHandler {
-            #if DEBUG
-                print("心跳机制退出")
-            #endif
+            self.keepAliveSource = nil
         }
         keepAliveSource.resume()
     }
@@ -323,6 +318,18 @@ public extension SSH {
             return 0x7FFF_FFFF
         }
         return buffersize
+    }
+
+    /// Frees the resources associated with the SSH connection.
+    ///
+    /// This method releases the resources allocated for the SSH channel, SFTP session, and SSH session.
+    /// It should be called when the SSH connection is no longer needed to ensure proper cleanup.
+    ///
+    /// - Note: Ensure that no operations are being performed on the SSH connection before calling this method.
+    func free() {
+        freeChannel()
+        freeSFTP()
+        freeSession()
     }
 
     /// Frees the current SSH session.

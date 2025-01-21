@@ -1,6 +1,6 @@
 // Auth.swift
 // Copyright (c) 2025 ssh2.app
-// Created by admin@ssh2.app 2025/1/16.
+// Created by admin@ssh2.app 2025/1/19.
 
 import CSSH
 import Foundation
@@ -31,7 +31,6 @@ public extension SSH {
             guard callSSH2 { libssh2_userauth_password_ex(rawSession, user, user.count.load(), password, password.count.load(), nil) } == LIBSSH2_ERROR_NONE, isAuthenticated else {
                 return false
             }
-            startKeepalive()
             return isAuthenticated
         }
     }
@@ -63,7 +62,6 @@ public extension SSH {
             guard callSSH2 { libssh2_userauth_publickey_fromfile_ex(rawSession, user, user.count.load(), publickeyFile, privateKeyFile, passphrase) } == LIBSSH2_ERROR_NONE, isAuthenticated else {
                 return false
             }
-            startKeepalive()
             return isAuthenticated
         }
     }
@@ -96,7 +94,6 @@ public extension SSH {
             guard callSSH2 { libssh2_userauth_publickey_frommemory(rawSession, user, user.count, publickey, publickey.count, privateKey, privateKey.count, passphrase) } == LIBSSH2_ERROR_NONE, isAuthenticated else {
                 return false
             }
-            startKeepalive()
             return isAuthenticated
         }
     }
@@ -122,7 +119,6 @@ public extension SSH {
             guard callSSH2 { libssh2_userauth_hostbased_fromfile_ex(rawSession, user, user.count.load(), publickeyFile, privateKeyFile, passphrase, hostname, hostname.count.load(), user, user.count.load()) } == LIBSSH2_ERROR_NONE, isAuthenticated else {
                 return false
             }
-            startKeepalive()
             return isAuthenticated
         }
     }
@@ -148,7 +144,7 @@ public extension SSH {
             guard isNone else {
                 return false
             }
-            startKeepalive()
+
             return isAuthenticated
         }
         guard isKeyboard else {
@@ -181,7 +177,6 @@ public extension SSH {
             guard code == LIBSSH2_ERROR_NONE else {
                 return false
             }
-            startKeepalive()
             return isAuthenticated
         }
     }

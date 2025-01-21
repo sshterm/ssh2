@@ -1,6 +1,6 @@
 // SSH.swift
 // Copyright (c) 2025 ssh2.app
-// Created by admin@ssh2.app 2025/1/16.
+// Created by admin@ssh2.app 2025/1/19.
 
 import Crypto
 import CSSH
@@ -51,20 +51,6 @@ public class SSH {
     /// A string representing the banner message for the SSH session.
     public var banner = ""
 
-    /// The interval in seconds for sending keepalive messages to maintain the SSH connection.
-    ///
-    /// This property specifies how frequently the client should send keepalive messages to the server
-    /// to ensure that the connection remains active. A value of 5 means that a keepalive message will
-    /// be sent every 5 seconds.
-    public var keepaliveInterval = 5
-    /// A Boolean value that determines whether the keepalive mechanism is enabled.
-    ///
-    /// When `true`, the keepalive mechanism is enabled, which helps to maintain
-    /// the connection by periodically sending messages to the server. This can
-    /// prevent the connection from being closed due to inactivity.
-    ///
-    /// The default value is `true`.
-    public var keepalive: Bool = true
     /// A Boolean property that determines whether the SSH connection operates in blocking mode.
     ///
     /// When `true`, the connection will block the execution of the program until the operation completes.
@@ -111,33 +97,6 @@ public class SSH {
         self.timeout = timeout
         self.compress = compress
         libssh2_init(0)
-    }
-
-    /// Closes the SSH connection by performing the following steps:
-    /// 1. Shuts down the read side of the connection.
-    /// 2. Locks the `lockRow` to ensure thread safety.
-    /// 3. Frees any allocated resources.
-    /// 4. Shuts down both the read and write sides of the connection.
-    public func close() {
-        shutdown(.r)
-        lockRow.lock()
-        defer {
-            lockRow.unlock()
-        }
-        free()
-        shutdown(.rw)
-    }
-
-    /// Frees the resources associated with the SSH connection.
-    ///
-    /// This method releases the resources allocated for the SSH channel, SFTP session, and SSH session.
-    /// It should be called when the SSH connection is no longer needed to ensure proper cleanup.
-    ///
-    /// - Note: Ensure that no operations are being performed on the SSH connection before calling this method.
-    func free() {
-        freeChannel()
-        freeSFTP()
-        freeSession()
     }
 
     /// Deinitializer for the SSH class.
