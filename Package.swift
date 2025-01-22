@@ -33,7 +33,11 @@ let package = Package(
         ),
         .target(
             name: "Crypto",
-            dependencies: [.product(name: "OpenSSL", package: "CSSH"), .product(name: "SSHKey", package: "CSSH"), "Extension"],
+            dependencies: [
+                .product(name: "OpenSSL", package: "CSSH"),
+                .product(name: "SSHKey", package: "CSSH"),
+                "Extension"
+            ],
             swiftSettings: [.define("HAVE_OPENSSL")]
         ),
         .target(
@@ -50,5 +54,6 @@ let package = Package(
                 .process("Resources"),
             ]
         ),
-    ]
+    ],
+    swiftLanguageVersions: [.v5]
 )
