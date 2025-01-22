@@ -19,10 +19,10 @@ import Foundation
 public struct ProxyConfiguration {
     let host: String
     let port: String
-    let username: String?
-    let password: String?
+    let username: String
+    let password: String
     let type: ProxyType
-    public init(host: String, port: String, type: ProxyType, username: String? = nil, password: String? = nil) {
+    public init(host: String, port: String, type: ProxyType, username: String = "", password: String = "") {
         self.host = host
         self.port = port
         self.username = username
@@ -46,9 +46,9 @@ public struct ProxyConfiguration {
             return false
         }
         switch type {
-        case .http, .https:
+        case .http:
             let connectString = "CONNECT \(host):\(port) HTTP/1.1\r\n" +
-                (username != nil && password != nil ? "Proxy-Authorization: Basic \(Data("\(username!):\(password!)".utf8).base64EncodedString().trimmingCharacters(in: .whitespacesAndNewlines))\r\n" : "") +
+                (!username.isEmpty && !password.isEmpty ? "Proxy-Authorization: Basic \(Data("\(username):\(password)".utf8).base64EncodedString().trimmingCharacters(in: .whitespacesAndNewlines))\r\n" : "") +
                 "Host: \(host):\(port)\r\n" +
                 "\r\n"
             guard fd.write(connectString.bytes, connectString.count) == connectString.count else {
@@ -64,7 +64,7 @@ public struct ProxyConfiguration {
             }
         case .socks5:
             var greeting: [UInt8] = [0x05, 0x01, 0x00]
-            if username != nil, password != nil {
+            if !username.isEmpty, !password.isEmpty {
                 greeting = [0x05, 0x01, 0x02]
             }
             guard fd.write(&greeting, greeting.count) == greeting.count else {
@@ -78,7 +78,7 @@ public struct ProxyConfiguration {
                 return false
             }
             if response.buffer[1] == 0x02 {
-                guard let username, let password else {
+                guard !username.isEmpty, !password.isEmpty else {
                     return false
                 }
                 let usernameBytes = [UInt8](username.utf8)
@@ -143,8 +143,8 @@ public struct ProxyConfiguration {
 /// - http: Represents an HTTP proxy server.
 /// - https: Represents an HTTPS proxy server.
 /// - socks5: Represents a SOCKS5 proxy server.
-public enum ProxyType {
+public enum ProxyType: String, CaseIterable {
     case http
-    case https
+    // case https
     case socks5
 }

@@ -12,7 +12,7 @@ public class SSH {
     ///
     /// This constant holds the version number of the SSH library as a string.
     /// It can be used to check the version of the library being used in the project.
-    public static let version = "7.0.0"
+    public static let version = "0.0.1"
 
     /// A constant representing the version of the libssh2 library being used.
     /// This value is defined by the `LIBSSH2_VERSION` macro.
@@ -98,7 +98,6 @@ public class SSH {
         self.user = user
         self.timeout = timeout
         self.compress = compress
-        libssh2_init(0)
     }
 
     public init(_ host: String) {
@@ -108,16 +107,5 @@ public class SSH {
         user = url?.user ?? "root"
         timeout = 5
         compress = true
-        libssh2_init(0)
-    }
-
-    /// Deinitializer for the SSH class.
-    ///
-    /// This method is called when the instance of the SSH class is being deallocated.
-    /// It ensures that the SSH connection is properly closed and the libssh2 library is
-    /// properly cleaned up by calling `close()` and `libssh2_exit()`.
-    deinit {
-        close()
-        libssh2_exit()
     }
 }
