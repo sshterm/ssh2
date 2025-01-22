@@ -87,7 +87,7 @@ extension SSH {
     /// - Parameter callback: A closure that contains the asynchronous code to be executed.
     func addOperation(_ callback: @escaping () async -> Void) {
         let operation = BlockOperation {
-            Task {
+            async {
                 await callback()
             }
         }
