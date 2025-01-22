@@ -20,6 +20,13 @@ public extension Data {
         count > 20 ? base64EncodedString() : hex.joined(separator: ":")
     }
 
+    /// A computed property that returns the hexadecimal representation of the data as a string.
+    ///
+    /// - Returns: A string containing the hexadecimal representation of the data.
+    var hexString: String {
+        hex.joined()
+    }
+
     /// Converts the Data to a UTF-8 encoded String.
     var string: String? {
         string(encoding: .utf8)
