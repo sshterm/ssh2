@@ -17,7 +17,7 @@ public extension SSH {
             guard let rawChannel else {
                 return false
             }
-            poll()
+            pollShell()
             let code = callSSH2 {
                 libssh2_channel_process_startup(rawChannel, "shell", 5, nil, 0)
             }
@@ -105,7 +105,7 @@ public extension SSH {
     /// or the read operation is complete, the shell is canceled. The cancel handler
     /// notifies the delegate that the connection is offline and sends an EOF signal.
     ///
-    private func poll() {
+    func pollShell() {
         channelBlocking(false)
         cancelShell()
         socketShell = DispatchSource.makeReadSource(fileDescriptor: socket, queue: queue)
@@ -133,20 +133,6 @@ public extension SSH {
             channelDelegate?.connect(ssh: self, online: false)
         }
         socketShell?.resume()
-    }
-
-    /// Handles incoming data from the SSH channel.
-    /// - Parameters:
-    ///   - data: The data received from the SSH channel.
-    ///   - stdout: A boolean indicating whether the data is from the standard output (true) or standard error (false).
-    /// - Note: If the data is not empty, it adds an operation to handle the data by calling the appropriate delegate method (`stdout` or `dtderr`).
-    private func onData(_ data: Data, _ stdout: Bool) {
-        guard data.count > 0 else {
-            return
-        }
-        addOperation { [self] in
-            await stdout ? channelDelegate?.stdout(ssh: self, data: data) : channelDelegate?.dtderr(ssh: self, data: data)
-        }
     }
 
     /// Cancels the current shell session by canceling the associated socket source and setting it to nil.

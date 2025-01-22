@@ -28,9 +28,7 @@ public class SSH {
     /// This array contains the default filenames `"."` and `".."` which are typically used to represent the current directory and the parent directory, respectively.
     public var ignoredfiles = [".", ".."]
 
-    /// A public variable representing the socket file descriptor.
-    /// It is initialized to `-1`.
-    public var socket: Socket = -1
+    public internal(set) var socket: Socket = -1
     public let host: String
     public let port: String
     public var user: String
@@ -51,7 +49,7 @@ public class SSH {
     /// A string representing the banner message for the SSH session.
     public var banner = ""
 
-    public var ip: IP = ""
+    public internal(set) var hostname: IP = ""
 
     public var proxy: ProxyConfiguration?
 
@@ -84,7 +82,7 @@ public class SSH {
     /// - `rawSession`: A pointer to the SSH session.
     /// - `rawChannel`: A pointer to the SSH channel.
     /// - `rawSFTP`: A pointer to the SFTP session.
-    public var rawSession, rawChannel, rawSFTP: OpaquePointer?
+    public internal(set) var rawSession, rawChannel, rawSFTP: OpaquePointer?
 
     /// Initializes a new SSH connection with the specified parameters.
     ///

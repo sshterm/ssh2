@@ -57,7 +57,6 @@ extension SSH {
     /// This function locks the SSH session before executing the callback and unlocks it afterward.
     /// If `wait` is `true`, it will handle `LIBSSH2_ERROR_EAGAIN` errors by waiting for the session to be ready.
     /// The function will repeat the callback execution until it succeeds or an error other than `E
-
     func callSSH2<T>(_ wait: Bool = true, _ callback: @escaping () -> T) -> T {
         var ret: T
         lockSSH2.lock()
@@ -147,5 +146,19 @@ extension SSH {
     func disconnect(sess _: UnsafeRawPointer, reason _: CInt, message: UnsafePointer<CChar>, messageLen: CInt, language _: UnsafePointer<CChar>, languageLen _: CInt) {
         sessionDelegate?.disconnect(ssh: self, message: Data(bytes: message, count: Int(messageLen)))
         free()
+    }
+
+    /// Handles incoming data from the SSH channel.
+    /// - Parameters:
+    ///   - data: The data received from the SSH channel.
+    ///   - stdout: A boolean indicating whether the data is from the standard output (true) or standard error (false).
+    /// - Note: If the data is not empty, it adds an operation to handle the data by calling the appropriate delegate method (`stdout` or `dtderr`).
+    func onData(_ data: Data, _ stdout: Bool) {
+        guard data.count > 0 else {
+            return
+        }
+        addOperation { [self] in
+            await stdout ? channelDelegate?.stdout(ssh: self, data: data) : channelDelegate?.dtderr(ssh: self, data: data)
+        }
     }
 }
