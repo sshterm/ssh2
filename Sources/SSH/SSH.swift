@@ -6,6 +6,8 @@ import Crypto
 import CSSH
 import Extension
 import Foundation
+import Proxy
+import Socket
 
 public class SSH {
     /// The current version of the SSH library.

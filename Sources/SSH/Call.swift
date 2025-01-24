@@ -84,14 +84,14 @@ extension SSH {
     /// Adds an asynchronous operation to be executed.
     ///
     /// - Parameter callback: A closure that contains the asynchronous code to be executed.
-    func addOperation(_ callback: @escaping () async -> Void) {
-        let operation = BlockOperation {
-            async {
-                await callback()
-            }
-        }
-        job.addOperation(operation)
-    }
+//    func addOperation(_ callback: @escaping () async -> Void) {
+//        let operation = BlockOperation {
+//            async {
+//                await callback()
+//            }
+//        }
+//        job.addOperation(operation)
+//    }
 
     /// Traces a message by converting it from a C-style string to a Swift string and passing it to the session delegate.
     /// - Parameters:
@@ -101,11 +101,8 @@ extension SSH {
         guard let msg = Data(bytes: message, count: messageLen).string else {
             return
         }
-        #if DEBUG
-            print(msg)
-        #endif
         addOperation {
-            await self.sessionDelegate?.trace(ssh: self, message: msg)
+            self.sessionDelegate?.trace(ssh: self, message: msg)
         }
     }
 
@@ -124,11 +121,8 @@ extension SSH {
         guard let msg = Data(bytes: message, count: Int(messageLen)).string else {
             return
         }
-        #if DEBUG
-            print(msg)
-        #endif
         addOperation {
-            await self.sessionDelegate?.debug(ssh: self, message: msg)
+            self.sessionDelegate?.debug(ssh: self, message: msg)
         }
     }
 
@@ -158,7 +152,7 @@ extension SSH {
             return
         }
         addOperation { [self] in
-            await stdout ? channelDelegate?.stdout(ssh: self, data: data) : channelDelegate?.dtderr(ssh: self, data: data)
+            stdout ? channelDelegate?.stdout(ssh: self, data: data) : channelDelegate?.dtderr(ssh: self, data: data)
         }
     }
 }

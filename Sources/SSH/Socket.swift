@@ -6,6 +6,8 @@ import CSSH
 import Darwin
 import Extension
 import Foundation
+import Proxy
+import Socket
 
 public extension SSH {
     /// A computed property that indicates whether the socket is connected.
@@ -48,7 +50,7 @@ public extension SSH {
     /// - Returns: A `Bool` indicating whether the connection was successfully established.
     func connect() async -> Bool {
         await call { [self] in
-            let (sockfd, hostname) = Socket.create(host, port, timeout, proxy: proxy)
+            let (sockfd, hostname) = (proxy != nil) ? Proxy(proxy!).connect(host, port, timeout) : Socket.create(host, port, timeout)
             guard sockfd != -1 else {
                 return false
             }
@@ -70,7 +72,7 @@ public extension SSH {
         let size = socket.send(buffer, length, flags)
         if size > 0 {
             addOperation {
-                await self.sessionDelegate?.send(ssh: self, size: size)
+                self.sessionDelegate?.send(ssh: self, size: size)
             }
         }
         return size
@@ -88,7 +90,7 @@ public extension SSH {
         let size = socket.recv(buffer, length, flags)
         if size > 0 {
             addOperation {
-                await self.sessionDelegate?.recv(ssh: self, size: size)
+                self.sessionDelegate?.recv(ssh: self, size: size)
             }
         }
         return size

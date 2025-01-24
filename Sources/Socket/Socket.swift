@@ -1,8 +1,9 @@
 // Socket.swift
 // Copyright (c) 2025 ssh2.app
-// Created by admin@ssh2.app 2025/1/19.
+// Created by admin@ssh2.app 2025/1/18.
 
 import Darwin
+import Extension
 import Foundation
 import Network
 
@@ -56,13 +57,12 @@ public extension Socket {
     ///   - host: The hostname or IP address to connect to.
     ///   - port: The port number to connect to.
     ///   - timeout: The timeout value in seconds for the connection.
-    ///   - proxy: An optional `ProxyConfiguration` object for connecting through a proxy.
     ///
     /// - Returns: A socket file descriptor (`Sock`) on success, or `-1` on failure.
-    static func create(_ host: String, _ port: String, _ timeout: Int, proxy: ProxyConfiguration? = nil) -> (Socket, IP) {
+    static func create(_ host: String, _ port: String, _ timeout: Int) -> (Socket, IP) {
         var fd: Int32 = -1
         var hostname = ""
-        IP.getAddrInfo(host: proxy?.host ?? host, port: proxy?.port ?? port) { info in
+        IP.getAddrInfo(host: host, port: port) { info in
             fd = Darwin.socket(info.pointee.ai_family, info.pointee.ai_socktype, info.pointee.ai_protocol)
             if fd < 0 {
                 return false
@@ -75,13 +75,6 @@ public extension Socket {
                 fd.close()
                 fd = -1
                 return false
-            }
-            if let proxy {
-                if !proxy.connect(fd: fd, host: host, port: port) {
-                    fd.close()
-                    fd = -1
-                    return false
-                }
             }
             var name = [CChar](repeating: 0, count: Int(NI_MAXHOST))
             guard Darwin.getnameinfo(info.pointee.ai_addr, info.pointee.ai_addrlen, &name, socklen_t(name.count), nil, 0, NI_NUMERICHOST) == 0 else {

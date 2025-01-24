@@ -22,6 +22,10 @@ let package = Package(
             targets: ["DNS"]
         ),
         .library(
+            name: "Proxy",
+            targets: ["Proxy"]
+        ),
+        .library(
             name: "GeoLite2",
             targets: ["GeoLite2"]
         ),
@@ -41,11 +45,21 @@ let package = Package(
                 .product(name: "OpenSSL", package: "CSSH"),
                 .product(name: "SSHKey", package: "CSSH"),
                 "Extension",
+                "Proxy",
+                "Socket",
             ],
             swiftSettings: [.define("HAVE_OPENSSL")]
         ),
         .target(
             name: "Extension"
+        ),
+        .target(
+            name: "Proxy",
+            dependencies: ["Socket", "Extension"]
+        ),
+        .target(
+            name: "Socket",
+            dependencies: ["Extension"]
         ),
         .target(
             name: "DNS",

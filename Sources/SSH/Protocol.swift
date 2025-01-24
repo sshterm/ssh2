@@ -49,25 +49,25 @@ public protocol SessionDelegate {
     /// - Parameters:
     ///   - ssh: The SSH session instance.
     ///   - size: The size of the data to be sent.
-    func send(ssh: SSH, size: Int) async
+    func send(ssh: SSH, size: Int)
 
     /// Called to receive data over the SSH session.
     /// - Parameters:
     ///   - ssh: The SSH session instance.
     ///   - size: The size of the data to be received.
-    func recv(ssh: SSH, size: Int) async
+    func recv(ssh: SSH, size: Int)
 
     /// Called to log debug messages.
     /// - Parameters:
     ///   - ssh: The SSH session instance.
     ///   - message: The debug message.
-    func debug(ssh: SSH, message: String) async
+    func debug(ssh: SSH, message: String)
 
     /// Called to trace SSH session events.
     /// - Parameters:
     ///   - ssh: The SSH session instance.
     ///   - message: The trace message.
-    func trace(ssh: SSH, message: String) async
+    func trace(ssh: SSH, message: String)
 }
 
 /// A protocol that defines the delegate methods for handling SSH channel events.
@@ -77,14 +77,14 @@ public protocol ChannelDelegate {
     /// - Parameters:
     ///   - ssh: The SSH instance associated with the event.
     ///   - data: The data received on the standard output stream.
-    func stdout(ssh: SSH, data: Data) async
+    func stdout(ssh: SSH, data: Data)
 
     /// Called when there is data available on the standard error stream.
     ///
     /// - Parameters:
     ///   - ssh: The SSH instance associated with the event.
     ///   - data: The data received on the standard error stream.
-    func dtderr(ssh: SSH, data: Data) async
+    func dtderr(ssh: SSH, data: Data)
 
     /// Called when the SSH connection is disconnected.
     ///

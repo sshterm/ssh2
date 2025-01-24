@@ -93,8 +93,8 @@ public extension SSH {
             libssh2_session_callback_set2(rawSession, LIBSSH2_CALLBACK_SEND, unsafeBitCast(send, to: cbGenericType.self))
             libssh2_session_callback_set2(rawSession, LIBSSH2_CALLBACK_RECV, unsafeBitCast(recv, to: cbGenericType.self))
             libssh2_session_flag(rawSession, LIBSSH2_FLAG_COMPRESS, compress ? 1 : 0)
-            libssh2_session_flag(rawSession, LIBSSH2_FLAG_SIGPIPE, 1)
-            libssh2_session_flag(rawSession, LIBSSH2_FLAG_QUOTE_PATHS, 1)
+            // libssh2_session_flag(rawSession, LIBSSH2_FLAG_SIGPIPE, 1)
+            // libssh2_session_flag(rawSession, LIBSSH2_FLAG_QUOTE_PATHS, 1)
             libssh2_session_set_timeout(rawSession, timeout * 1000)
             libssh2_session_banner_set(rawSession, clientbanner)
             let rec = callSSH2 {

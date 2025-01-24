@@ -5,6 +5,7 @@
 import CSSH
 import Extension
 import Foundation
+import Socket
 
 class SFTPInputStream: InputStream {
     var ssh: SSH
