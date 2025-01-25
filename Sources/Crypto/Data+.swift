@@ -8,11 +8,6 @@ import Foundation
 public extension Data {
     #if HAVE_OPENSSL
 
-        /// Computes the MD4 hash of the data.
-        var md4: Data {
-            Crypto.shared.sha(self, algorithm: .md4)
-        }
-
         /// Computes the MD5 hash of the data.
         var md5: Data {
             Crypto.shared.sha(self, algorithm: .md5)
@@ -76,14 +71,6 @@ public extension Data {
         /// Computes the SHA3-512 hash of the data.
         var sha3_512: Data {
             Crypto.shared.sha(self, algorithm: .sha3_512)
-        }
-
-        /// Computes the HMAC-MD4 hash of the data using the provided key.
-        ///
-        /// - Parameter key: The key to use for the HMAC computation.
-        /// - Returns: The HMAC-MD4 hash of the data.
-        func md4(key: Data) -> Data {
-            Crypto.shared.hmac(self, key: key, algorithm: .md4)
         }
 
         /// Computes the HMAC-MD5 hash of the data using the provided key.
@@ -188,14 +175,6 @@ public extension Data {
         /// - Returns: The HMAC-SHA3-512 hash of the data.
         func sha3_512(key: Data) -> Data {
             Crypto.shared.hmac(self, key: key, algorithm: .sha3_512)
-        }
-
-        /// Computes the HMAC-MD4 hash of the data using the provided key.
-        ///
-        /// - Parameter key: The key to use for the HMAC computation.
-        /// - Returns: The HMAC-MD4 hash of the data.
-        func md4(key: String) -> Data {
-            Crypto.shared.hmac(self, key: .from(key), algorithm: .md4)
         }
 
         /// Computes the HMAC-MD5 hash of the data using the provided key.
@@ -304,11 +283,6 @@ public extension Data {
 
     #else
 
-        /// Computes the MD4 hash of the data.
-        var md4: Data {
-            Crypto.shared.sha(self, algorithm: .md4)
-        }
-
         /// Computes the MD5 hash of the data.
         var md5: Data {
             Crypto.shared.sha(self, algorithm: .md5)
@@ -367,14 +341,6 @@ public extension Data {
         /// Computes the SHA3-512 hash of the data.
         var sha3_512: Data {
             Crypto.shared.sha(self, algorithm: .sha3_512)
-        }
-
-        /// Computes the HMAC-MD4 hash of the data using the provided key.
-        ///
-        /// - Parameter key: The key to use for the HMAC computation.
-        /// - Returns: The HMAC-MD4 hash of the data.
-        func md4(key: Data) -> Data {
-            Crypto.shared.hmac(self, key: key, algorithm: .md4)
         }
 
         /// Computes the HMAC-MD5 hash of the data using the provided key.
@@ -471,14 +437,6 @@ public extension Data {
         /// - Returns: The HMAC-SHA3-512 hash of the data.
         func sha3_512(key: Data) -> Data {
             Crypto.shared.hmac(self, key: key, algorithm: .sha3_512)
-        }
-
-        /// Computes the HMAC-MD4 hash of the data using the provided key.
-        ///
-        /// - Parameter key: The key to use for the HMAC computation.
-        /// - Returns: The HMAC-MD4 hash of the data.
-        func md4(key: String) -> Data {
-            Crypto.shared.hmac(self, key: .from(key), algorithm: .md4)
         }
 
         /// Computes the HMAC-MD5 hash of the data using the provided key.

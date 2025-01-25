@@ -79,7 +79,7 @@ public extension Proxy {
                     guard fd.read(response.buffer, response.count) == response.count else {
                         continue
                     }
-                    guard response.buffer[0] == 0x05 else {
+                    guard response.buffer[0] == 0x01 else {
                         continue
                     }
                     guard response.buffer[1] == 0x00 else {
@@ -100,11 +100,10 @@ public extension Proxy {
                     }
                     request += addr
                 } else {
-                    continue
-                    //                request.append(0x03)
-                    //                let domainBytes = ip.utf8
-                    //                request.append(UInt8(domainBytes.count))
-                    //                request += domainBytes
+                    request.append(0x03)
+                    let domainBytes = [UInt8](ip.utf8)
+                    request.append(UInt8(domainBytes.count))
+                    request += domainBytes
                 }
                 request += (UInt16(port) ?? 22).bytes.reversed()
                 guard fd.write(&request, request.count) == request.count else {

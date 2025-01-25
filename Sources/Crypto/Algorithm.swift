@@ -13,15 +13,13 @@ import Foundation
 /// Conforms to `String` and `CaseIterable` protocols.
 public enum ShaAlgorithm: String, CaseIterable {
     #if HAVE_OPENSSL
-        case md4, md5, md5_sha1, sha1, sha224, sha256, sha384, sha512, sha512_224, sha512_256, sha3_224, sha3_256, sha3_384, sha3_512
+        case md5, sha1, sha256, sha512, md5_sha1, sha224, sha384, sha512_224, sha512_256, sha3_224, sha3_256, sha3_384, sha3_512
     #else
-        case md4, md5, sha1, sha224, sha256, sha384, sha512, sha512_224, sha512_256, sha3_224, sha3_256, sha3_384, sha3_512
+        case md5, sha1, sha256, sha512, sha224, sha384, sha512_224, sha512_256, sha3_224, sha3_256, sha3_384, sha3_512
     #endif
     #if HAVE_OPENSSL
         public var EVP: OpaquePointer? {
             switch self {
-            case .md4:
-                EVP_md4()
             case .md5:
                 EVP_md5()
             case .md5_sha1:
@@ -53,8 +51,6 @@ public enum ShaAlgorithm: String, CaseIterable {
     #else
         public var EVP: UnsafePointer<WOLFSSL_EVP_MD>? {
             switch self {
-            case .md4:
-                wolfSSL_EVP_md4()
             case .md5:
                 wolfSSL_EVP_md5()
             case .sha1:
