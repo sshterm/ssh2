@@ -105,23 +105,23 @@ public extension SSH {
     ///   - passphrase: An optional passphrase for the private key file. Defaults to `nil`.
     ///   - publickeyFile: The path to the public key file used for authentication. Defaults to an empty string.
     /// - Returns: A boolean value indicating whether the authentication was successful.
-    func authenticate(hostname: String, privateKeyFile: String, passphrase: String? = nil, publickeyFile: String = "") async -> Bool {
-        guard isHostbased else {
-            return false
-        }
-        if isAuthenticated {
-            return true
-        }
-        return await call { [self] in
-            guard let rawSession else {
-                return false
-            }
-            guard callSSH2 { libssh2_userauth_hostbased_fromfile_ex(rawSession, user, user.count.load(), publickeyFile, privateKeyFile, passphrase, hostname, hostname.count.load(), user, user.count.load()) } == LIBSSH2_ERROR_NONE, isAuthenticated else {
-                return false
-            }
-            return isAuthenticated
-        }
-    }
+//    func authenticate(hostname: String, privateKeyFile: String, passphrase: String? = nil, publickeyFile: String = "") async -> Bool {
+//        guard isHostbased else {
+//            return false
+//        }
+//        if isAuthenticated {
+//            return true
+//        }
+//        return await call { [self] in
+//            guard let rawSession else {
+//                return false
+//            }
+//            guard callSSH2 { libssh2_userauth_hostbased_fromfile_ex(rawSession, user, user.count.load(), publickeyFile, privateKeyFile, passphrase, hostname, hostname.count.load(), user, user.count.load()) } == LIBSSH2_ERROR_NONE, isAuthenticated else {
+//                return false
+//            }
+//            return isAuthenticated
+//        }
+//    }
 
     /// Authenticates the user using the specified authentication method.
     ///
@@ -161,7 +161,7 @@ public extension SSH {
                 guard let ssh: SSH = abstract?.address.load() else {
                     return
                 }
-                for i in 0 ..< numPrompts.load() {
+                for i in 0 ..< Int(numPrompts) {
                     guard let promptI = prompts?[i], let text = promptI.text else {
                         continue
                     }
@@ -188,14 +188,14 @@ public extension SSH {
     ///
     /// - Returns: A Boolean value indicating whether the user authentication method is "none".
     var isNone: Bool {
-        userauth.contains("none")
+        userauth.contains(.none)
     }
 
     /// A computed property that checks if the user authentication method contains "password".
     ///
     /// - Returns: A Boolean value indicating whether the user authentication method includes "password".
     var isPassword: Bool {
-        userauth.contains("password")
+        userauth.contains(.password)
     }
 
     /// A computed property that checks if the user authentication method includes "publickey".
@@ -205,7 +205,7 @@ public extension SSH {
     ///
     /// - Returns: A Boolean value indicating whether public key authentication is used.
     var isPublickey: Bool {
-        userauth.contains("publickey")
+        userauth.contains(.publickey)
     }
 
     /// A computed property that checks if the user authentication method includes "hostbased".
@@ -214,20 +214,20 @@ public extension SSH {
     /// indicating that host-based authentication is being used. Otherwise, it returns `false`.
     ///
     /// - Returns: A Boolean value indicating whether host-based authentication is used.
-    var isHostbased: Bool {
-        userauth.contains("hostbased")
-    }
+//    var isHostbased: Bool {
+//        userauth.contains(.hostbased)
+//    }
 
     /// A computed property that checks if the user authentication method contains "keyboard-interactive".
     ///
     /// - Returns: A Boolean value indicating whether the user authentication method includes "keyboard-interactive".
     var isKeyboard: Bool {
-        userauth.contains("keyboard-interactive")
+        userauth.contains(.keyboard)
     }
 
     /// A computed property that returns a list of user authentication methods available for the current session.
     /// - Returns: An array of strings representing the available user authentication methods. If the session is not available or the authentication list cannot be retrieved, an empty array is returned.
-    var userauth: [String] {
+    var userauth: [AuthType] {
         guard let rawSession else {
             return []
         }
@@ -237,7 +237,24 @@ public extension SSH {
         guard let ptr else {
             return []
         }
-        return ptr.string.components(separatedBy: ",")
+        var auth: [AuthType] = []
+        for a in ptr.string.components(separatedBy: ",") {
+            switch a {
+            case "none":
+                auth.append(.none)
+            case "password":
+                auth.append(.password)
+            case "publickey":
+                auth.append(.publickey)
+            case "keyboard-interactive":
+                auth.append(.keyboard)
+//            case "hostbased":
+//                auth.append(.hostbased)
+            default:
+                continue
+            }
+        }
+        return auth
     }
 
     /// A computed property that checks if the user is authenticated.

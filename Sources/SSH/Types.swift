@@ -189,3 +189,22 @@ public enum Method: String, CaseIterable {
         }
     }
 }
+
+public enum AuthType: String, CaseIterable {
+    case none, password, publickey, keyboard // , hostbased
+
+    public var name: String {
+        switch self {
+        case .none:
+            "None"
+        case .password:
+            "Password"
+        case .publickey:
+            "Public Key"
+        case .keyboard:
+            "Keyboard Interactive"
+//        case .hostbased:
+//            "Host Based"
+        }
+    }
+}

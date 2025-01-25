@@ -148,7 +148,7 @@ public enum PubDNS: String, CaseIterable {
     }
 
     public var dohConfiguration: DNSConfiguration {
-        .init(resolver: .doh, ips: ips, host: url, port: 443)
+        .init(resolver: .doh, ips: ips, host: url, port: .https)
     }
 
     public var dotConfiguration: DNSConfiguration {
