@@ -304,7 +304,7 @@ public extension SSH {
     ///
     /// - Parameter type: The type of method to retrieve.
     /// - Returns: A string representing the available methods for the specified type, or `nil` if the session or methods could not be retrieved.
-    func methods(_ type: Method) -> String? {
+    func methods(_ type: MethodType) -> String? {
         guard let rawSession else {
             return nil
         }
@@ -320,10 +320,7 @@ public extension SSH {
     ///
     /// - Returns: The buffer size as an `Int`.
     var bufferSize: Int {
-        if buffersize > 0x7FFF_FFFF {
-            return 0x7FFF_FFFF
-        }
-        return buffersize
+        buffersize > 0x7FFF_FFFF ? 0x7FFF_FFFF : buffersize
     }
 
     /// Frees the resources associated with the SSH connection.
@@ -333,6 +330,7 @@ public extension SSH {
     ///
     /// - Note: Ensure that no operations are being performed on the SSH connection before calling this method.
     func free() {
+        closeShell()
         freeChannel()
         freeSFTP()
         freeSession()

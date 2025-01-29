@@ -3,8 +3,8 @@
 // Created by admin@ssh2.app 2025/1/19.
 
 #if HAVE_OPENSSL
+    import CSSH
     import Foundation
-    import OpenSSL
     import SSHKey
 
     public class PrivKey {

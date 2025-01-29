@@ -43,7 +43,7 @@ public class SSH {
     public var trace: [TraceType] = [.none]
     /// A dictionary that maps `Method` keys to their corresponding string values.
     /// This property is used to store SSH methods and their associated descriptions or identifiers.
-    public var methods: [Method: String] = [:]
+    public var methods: [MethodType: String] = [:]
     /// The algorithm used for SSH fingerprint.
     /// Default value is `ShaAlgorithm.sha1`.
     public var algorithm: ShaAlgorithm = .sha1
@@ -71,7 +71,7 @@ public class SSH {
     var lockRow = NSLock()
     var lockSSH2 = NSLock()
 
-    let queue: DispatchQueue = .init(label: "SSH Queue", attributes: .concurrent)
+    let queue: DispatchQueue = .global()
     var socketShell: DispatchSourceRead?
     var keepAliveSource: DispatchSourceTimer?
 

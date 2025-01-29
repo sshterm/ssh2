@@ -52,7 +52,7 @@ public extension SSH {
         guard await exec("echo \">TEST<\"") else {
             return false
         }
-        guard let data = await read() else {
+        guard let data = await read(bufferSize: 6) else {
             return false
         }
         guard data.string?.trim.hasPrefix(">TEST<") ?? false else {
@@ -138,6 +138,10 @@ public extension SSH {
     ///
     /// - Returns: An optional `Data` object containing the read data, or `nil` if an error occurs or no data is available.
     func read(stderr: Bool = false, wait: Bool = true) async -> Data? {
+        await read(stderr: stderr, wait: wait, bufferSize: bufferSize)
+    }
+
+    func read(stderr: Bool = false, wait: Bool = true, bufferSize: Int) async -> Data? {
         guard let rawChannel else {
             return nil
         }
@@ -225,7 +229,7 @@ public extension SSH {
     /// Otherwise, it returns `true` if there is data available to read, and `false` if there is not.
     ///
     /// - Returns: A Boolean value indicating whether the SSH channel has data available to read.
-    var isPol: Bool {
+    var isPoll: Bool {
         guard let rawChannel = rawChannel else {
             return false
         }
@@ -238,7 +242,7 @@ public extension SSH {
     /// and `false` otherwise. It uses the `libssh2_poll_channel_read` function to check for errors.
     ///
     /// - Returns: A Boolean value indicating whether there is an error on the SSH channel.
-    var isPolError: Bool {
+    var isPollError: Bool {
         guard let rawChannel = rawChannel else {
             return false
         }
@@ -317,12 +321,10 @@ public extension SSH {
     func freeChannel() {
         if let rawChannel {
             libssh2_channel_set_blocking(rawChannel, 0)
-            sendEOF()
             lockSSH2.lock()
             defer {
                 lockSSH2.unlock()
             }
-            closeShell()
             libssh2_channel_free(rawChannel)
             addOperation {
                 self.channelDelegate?.disconnect(ssh: self)

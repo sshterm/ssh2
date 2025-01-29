@@ -148,7 +148,7 @@ extension [TraceType] {
 }
 
 /// Represents various SSH methods used in the SSH protocol.
-public enum Method: String, CaseIterable {
+public enum MethodType: String, CaseIterable {
     case kex // Key exchange method
     case hostkey // Host key method
     case crypt_cs // Encryption method for client to server

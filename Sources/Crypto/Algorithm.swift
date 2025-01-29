@@ -2,12 +2,8 @@
 // Copyright (c) 2025 ssh2.app
 // Created by admin@ssh2.app 2025/1/19.
 
+import CSSH
 import Foundation
-#if HAVE_OPENSSL
-    import OpenSSL
-#else
-    import wolfSSL
-#endif
 
 /// An enumeration representing the SHA (Secure Hash Algorithm) algorithms.
 /// Conforms to `String` and `CaseIterable` protocols.

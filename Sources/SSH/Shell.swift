@@ -3,6 +3,7 @@
 // Created by admin@ssh2.app 2025/1/19.
 
 import CSSH
+import Extension
 import Foundation
 
 public extension SSH {
@@ -110,13 +111,13 @@ public extension SSH {
         cancelShell()
         socketShell = DispatchSource.makeReadSource(fileDescriptor: socket, queue: queue)
         socketShell?.setEventHandler { [self] in
-            let (rc, erc) = read(PipeOutputStream(callback: { data in
+            let (rc, erc) = read(PipeOutputStream { data in
                 onData(data, true)
-                return isPol
-            }), PipeOutputStream(callback: { data in
+                return isPoll
+            }, PipeOutputStream { data in
                 onData(data, false)
-                return isPolError
-            }))
+                return isPollError
+            })
             guard rc > 0 || erc > 0 else {
                 guard rc != LIBSSH2_ERROR_SOCKET_RECV || erc != LIBSSH2_ERROR_SOCKET_RECV else {
                     cancelShell()
@@ -126,11 +127,10 @@ public extension SSH {
             }
             if !isRead {
                 cancelShell()
-                return
             }
         }
-        socketShell?.setCancelHandler { [self] in
-            channelDelegate?.connect(ssh: self, online: false)
+        socketShell?.setCancelHandler {
+            self.channelDelegate?.connect(ssh: self, online: false)
         }
         socketShell?.resume()
     }
@@ -148,5 +148,6 @@ public extension SSH {
     /// active sources associated with the shell.
     func closeShell() {
         cancelShell()
+        sendEOF()
     }
 }

@@ -2,13 +2,9 @@
 // Copyright (c) 2025 ssh2.app
 // Created by admin@ssh2.app 2025/1/19.
 
+import CSSH
 import Extension
 import Foundation
-#if HAVE_OPENSSL
-    import OpenSSL
-#else
-    import wolfSSL
-#endif
 
 public extension Crypto {
     /// Computes the SHA hash of the given message using the specified algorithm.

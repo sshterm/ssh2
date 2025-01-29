@@ -42,7 +42,7 @@ let package = Package(
         .target(
             name: "Crypto",
             dependencies: [
-                .product(name: "OpenSSL", package: "CSSH"),
+                .product(name: "CSSH", package: "CSSH"),
                 .product(name: "SSHKey", package: "CSSH"),
                 "Extension",
                 "Proxy",

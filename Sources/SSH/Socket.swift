@@ -122,19 +122,16 @@ public extension SSH {
         guard rawSession != nil, socket != -1 else {
             return -1
         }
-        var sockets = [pollfd(fd: socket, events: 0, revents: 0)]
+        var events: UInt = 0
         let dir = libssh2_session_block_directions(rawSession)
         if dir & LIBSSH2_SESSION_BLOCK_INBOUND != 0 {
-            sockets[0].events |= Int16(POLLIN)
+            events |= UInt(LIBSSH2_POLLFD_POLLIN)
         }
-
         if dir & LIBSSH2_SESSION_BLOCK_OUTBOUND != 0 {
-            sockets[0].events |= Int16(POLLOUT)
+            events |= UInt(LIBSSH2_POLLFD_POLLOUT)
         }
-        let rc = poll(&sockets, 1, Int32(timeout * 1000))
-        #if DEBUG
-            print("阻塞:\(rc) 方向: \(dir)")
-        #endif
+        var fds = [LIBSSH2_POLLFD(type: LIBSSH2_POLLFD_SOCKET.load(), fd: .init(socket: socket), events: events, revents: 1)]
+        let rc = libssh2_poll(&fds, fds.count.load(), timeout * 1000)
         return rc
     }
 
