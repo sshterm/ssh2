@@ -59,9 +59,9 @@ public extension Socket {
     ///   - timeout: The timeout value in seconds for the connection.
     ///
     /// - Returns: A socket file descriptor (`Sock`) on success, or `-1` on failure.
-    static func create(_ host: String, _ port: String, _ timeout: Int) -> (Socket, IP) {
+    static func create(_ host: String, _ port: String, _ timeout: Int) -> Socket {
         var fd: Int32 = -1
-        var hostname = ""
+        //var hostname = ""
         IP.getAddrInfo(host: host, port: port) { info in
             fd = Darwin.socket(info.pointee.ai_family, info.pointee.ai_socktype, info.pointee.ai_protocol)
             if fd < 0 {
@@ -76,16 +76,16 @@ public extension Socket {
                 fd = -1
                 return false
             }
-            var name = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-            guard Darwin.getnameinfo(info.pointee.ai_addr, info.pointee.ai_addrlen, &name, socklen_t(name.count), nil, 0, NI_NUMERICHOST) == 0 else {
-                fd.close()
-                fd = -1
-                return false
-            }
-            hostname = name.string
+//            var name = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+//            guard Darwin.getnameinfo(info.pointee.ai_addr, info.pointee.ai_addrlen, &name, socklen_t(name.count), nil, 0, NI_NUMERICHOST) == 0 else {
+//                fd.close()
+//                fd = -1
+//                return false
+//            }
+//            hostname = name.string
             return true
         }
-        return (fd, hostname)
+        return fd
     }
 
     /// Sends data through the socket.

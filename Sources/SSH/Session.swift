@@ -244,7 +244,7 @@ public extension SSH {
             return nil
         }
         let data = Crypto.shared.sha(hostkey.data, algorithm: algorithm)
-        return data.fingerprint
+        return String(format: "%@:%@",algorithm.rawValue.uppercased(), data.fingerprint)
     }
 
     /// Retrieves the host key of the SSH session.
