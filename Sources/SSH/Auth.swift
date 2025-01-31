@@ -241,14 +241,14 @@ public extension SSH {
         var auth: [AuthType] = []
         for a in ptr.string.components(separatedBy: ",") {
             switch a {
-            case "none":
-                auth.append(.none)
-            case "password":
-                auth.append(.password)
             case "publickey":
                 auth.append(.publickey)
             case "keyboard-interactive":
                 auth.append(.keyboard)
+            case "password":
+                auth.append(.password)
+            case "none":
+                auth.append(.none)
 //            case "hostbased":
 //                auth.append(.hostbased)
             default:

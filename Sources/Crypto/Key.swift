@@ -36,12 +36,12 @@
                 defer {
                     EVP_PKEY_CTX_free(genctx)
                 }
+                EVP_PKEY_keygen_init(genctx)
                 switch id {
                 case .rsa:
-                    EVP_PKEY_keygen_init(genctx)
                     EVP_PKEY_CTX_set_rsa_keygen_bits(genctx, bits)
                 case .ed25519:
-                    EVP_PKEY_keygen_init(genctx)
+                    break
                 }
                 var pkey = EVP_PKEY_new()
                 EVP_PKEY_keygen(genctx, &pkey)

@@ -131,7 +131,7 @@ public extension SSH {
             events |= UInt(LIBSSH2_POLLFD_POLLOUT)
         }
         var fds = [LIBSSH2_POLLFD(type: LIBSSH2_POLLFD_SOCKET.load(), fd: .init(socket: socket), events: events, revents: 1)]
-        let rc = libssh2_poll(&fds, fds.count.load(), timeout * 1000)
+        let rc = libssh2_poll(&fds, 1, timeout * 1000)
         return rc
     }
 

@@ -1,6 +1,6 @@
 // Socket.swift
 // Copyright (c) 2025 ssh2.app
-// Created by admin@ssh2.app 2025/1/18.
+// Created by admin@ssh2.app 2025/1/19.
 
 import Darwin
 import Extension
@@ -61,7 +61,7 @@ public extension Socket {
     /// - Returns: A socket file descriptor (`Sock`) on success, or `-1` on failure.
     static func create(_ host: String, _ port: String, _ timeout: Int) -> Socket {
         var fd: Int32 = -1
-        //var hostname = ""
+        // var hostname = ""
         IP.getAddrInfo(host: host, port: port) { info in
             fd = Darwin.socket(info.pointee.ai_family, info.pointee.ai_socktype, info.pointee.ai_protocol)
             if fd < 0 {

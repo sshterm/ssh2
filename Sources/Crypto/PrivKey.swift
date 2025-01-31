@@ -4,6 +4,7 @@
 
 #if HAVE_OPENSSL
     import CSSH
+    import Extension
     import Foundation
     import SSHKey
 
@@ -87,13 +88,10 @@
         func privKeyPEM(password: String = "") -> String {
             let out = BIO_new(BIO_s_mem())!
             defer { BIO_free(out) }
-            if password.isEmpty {
-                PEM_write_bio_PrivateKey(out, privKey, nil, nil, 0, nil, nil)
-            } else {
-                PEM_write_bio_PrivateKey(out, privKey, EVP_aes_256_cbc(), password, password.count.load(), nil, nil)
-            }
+            let kstr = password.trim
+            let klen: Int32 = kstr.count.load()
+            PEM_write_bio_PrivateKey(out, privKey, EVP_aes_256_cbc(), kstr, klen, nil, nil)
             let str = bioToString(bio: out)
-
             return str
         }
 
@@ -106,11 +104,9 @@
         /// - Returns: A `String` representation of the BIO object's contents.
         private func bioToString(bio: OpaquePointer) -> String {
             let len = BIO_ctrl(bio, BIO_CTRL_PENDING, 0, nil)
-            var buffer = [CChar](repeating: 0, count: len + 1)
-            BIO_read(bio, &buffer, Int32(len))
-
-            buffer[len] = 0
-            return buffer.string
+            let buf: Buffer<CChar> = .init(len)
+            BIO_read(bio, buf.buffer, Int32(len))
+            return String(cString: buf.buffer)
         }
     }
 #endif

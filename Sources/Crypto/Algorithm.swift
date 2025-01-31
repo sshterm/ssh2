@@ -90,16 +90,16 @@ public enum ShaAlgorithm: String, CaseIterable {
     /// - rsa: Represents the RSA key algorithm.
     /// - ed25519: Represents the ED25519 key algorithm.
     public enum keyAlgorithm: String, CaseIterable {
-        case rsa, ed25519
+        case ed25519, rsa
         /// The identifier for the key algorithm.
         ///
         /// - Returns: An `Int32` representing the identifier for the key algorithm.
-        public var id: Int32 {
+        var id: Int32 {
             switch self {
-            case .rsa:
-                return EVP_PKEY_RSA
             case .ed25519:
                 return EVP_PKEY_ED25519
+            case .rsa:
+                return EVP_PKEY_RSA
             }
         }
 
@@ -108,10 +108,10 @@ public enum ShaAlgorithm: String, CaseIterable {
         /// - Returns: A `String` representing the method for the key algorithm.
         public var method: String {
             switch self {
-            case .rsa:
-                return "ssh-rsa"
             case .ed25519:
                 return "ssh-ed25519"
+            case .rsa:
+                return "ssh-rsa"
             }
         }
     }

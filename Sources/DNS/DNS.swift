@@ -21,6 +21,10 @@ public extension DNS {
         NWParameters.PrivacyContext.default.requireEncryptedNameResolution(true, fallbackResolver: provider.configuration)
     }
 
+    func requireDisable() {
+        NWParameters.PrivacyContext.default.requireEncryptedNameResolution(false, fallbackResolver: nil)
+    }
+
     /// Resolves the given domain name to a list of IP addresses.
     ///
     /// - Parameter domain: The domain name to resolve.

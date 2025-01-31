@@ -17,7 +17,7 @@ public extension Data {
 
     /// Generates a fingerprint of the Data. If the Data length is greater than 20, it returns a base64 encoded string. Otherwise, it returns a colon-separated hexadecimal string.
     var fingerprint: String {
-        count > 20 ? base64EncodedString() : hex.joined(separator: ":")
+        count > 16 ? base64EncodedString() : hex.joined(separator: ":")
     }
 
     /// A computed property that returns the hexadecimal representation of the data as a string.

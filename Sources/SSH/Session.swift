@@ -237,14 +237,14 @@ public extension SSH {
 
     /// Generates the fingerprint of the host key using the specified SHA algorithm.
     ///
-    /// - Parameter algorithm: The SHA algorithm to use for generating the fingerprint. Defaults to `.sha1`.
+    /// - Parameter algorithm: The SHA algorithm to use for generating the fingerprint. Defaults to `.sha256`.
     /// - Returns: A string representing the fingerprint of the host key, or `nil` if the host key is not available.
-    func fingerprint(_ algorithm: ShaAlgorithm = .sha1) -> String? {
+    func fingerprint(_ algorithm: ShaAlgorithm = .sha256) -> String? {
         guard let hostkey else {
             return nil
         }
         let data = Crypto.shared.sha(hostkey.data, algorithm: algorithm)
-        return String(format: "%@:%@",algorithm.rawValue.uppercased(), data.fingerprint)
+        return String(format: "%@:%@", algorithm.rawValue.uppercased(), data.fingerprint)
     }
 
     /// Retrieves the host key of the SSH session.
