@@ -523,11 +523,9 @@ public extension SSH {
      */
     func freeSFTP() {
         if let rawSFTP {
-            lockSSH2.lock()
-            defer {
-                lockSSH2.unlock()
+            callSSH2 {
+                libssh2_sftp_shutdown(rawSFTP)
             }
-            libssh2_sftp_shutdown(rawSFTP)
             self.rawSFTP = nil
         }
     }

@@ -344,12 +344,9 @@ public extension SSH {
     func freeSession() {
         cancelKeepalive()
         if let rawSession {
+            waitGroup.wait()
             if isConnected {
                 libssh2_session_disconnect_ex(rawSession, SSH_DISCONNECT_BY_APPLICATION, "Bye-Bye", "")
-            }
-            lockSSH2.lock()
-            defer {
-                lockSSH2.unlock()
             }
             libssh2_session_free(rawSession)
             self.rawSession = nil

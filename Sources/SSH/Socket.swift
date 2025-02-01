@@ -136,10 +136,6 @@ public extension SSH {
     /// 4. Shuts down both the read and write sides of the connection.
     func close() {
         shutdown(.r)
-        lockRow.lock()
-        defer {
-            lockRow.unlock()
-        }
         channelDelegate = nil
         sessionDelegate = nil
         free()

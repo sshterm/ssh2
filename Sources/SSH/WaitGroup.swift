@@ -7,21 +7,21 @@ import Foundation
 public class WaitGroup {
     private var count: Int = 0
     private let condition = NSCondition()
-    private let lock = NSLock()
+    private let lock = Lock()
     public init() {}
 }
 
 public extension WaitGroup {
     func add(_ delta: Int = 1) {
-        lock.lock()
-        count += delta
-        lock.unlock()
+        lock.with {
+            count += delta
+        }
     }
 
     func done() {
-        lock.lock()
-        count -= 1
-        lock.unlock()
+        lock.with {
+            count -= 1
+        }
         if count <= 0 {
             condition.signal()
         }
@@ -31,5 +31,17 @@ public extension WaitGroup {
         while count > 0 {
             condition.wait()
         }
+    }
+
+    func with<T>(_ body: () -> T) -> T {
+        add()
+        defer {
+            self.done()
+        }
+        return body()
+    }
+
+    func withVoid(_ body: () -> Void) {
+        with(body)
     }
 }

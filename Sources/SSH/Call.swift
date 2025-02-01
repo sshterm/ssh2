@@ -13,11 +13,9 @@ extension SSH {
     /// - Note: This function uses `withUnsafeContinuation` to bridge the synchronous callback execution with the asynchronous context.
     func call<T>(_ callback: @escaping () -> T) async -> T {
         await withUnsafeContinuation { continuation in
-            lockRow.lock()
-            defer {
-                lockRow.unlock()
+            let ret = waitGroup.with {
+                callback()
             }
-            let ret = callback()
             continuation.resume(returning: ret)
         }
     }
@@ -34,17 +32,17 @@ extension SSH {
     ///
     /// - Important: This function locks the SSH2 resource before executing the callback and unlocks it after the callback completes.
     func callSSH2<T>(_ wait: Bool = true, _ callback: @escaping () -> T) -> T where T: FixedWidthInteger {
-        var ret: T
-        lockSSH2.lock()
-        defer {
-            lockSSH2.unlock()
+        lock.with {
+            var ret: T
+            repeat {
+                ret = waitGroup.with {
+                    callback()
+                }
+                guard wait, ret == LIBSSH2_ERROR_EAGAIN else { break }
+                guard waitsocket() > 0 else { break }
+            } while true
+            return ret
         }
-        repeat {
-            ret = callback()
-            guard wait, ret == LIBSSH2_ERROR_EAGAIN else { break }
-            guard waitsocket() > 0 else { break }
-        } while true
-        return ret
     }
 
     /// Executes a callback function within a locked SSH session, handling potential EAGAIN errors.
@@ -58,17 +56,17 @@ extension SSH {
     /// If `wait` is `true`, it will handle `LIBSSH2_ERROR_EAGAIN` errors by waiting for the session to be ready.
     /// The function will repeat the callback execution until it succeeds or an error other than `E
     func callSSH2<T>(_ wait: Bool = true, _ callback: @escaping () -> T) -> T {
-        var ret: T
-        lockSSH2.lock()
-        defer {
-            lockSSH2.unlock()
+        lock.with {
+            var ret: T
+            repeat {
+                ret = waitGroup.with {
+                    callback()
+                }
+                guard wait, rawSession != nil, libssh2_session_last_errno(rawSession) == LIBSSH2_ERROR_EAGAIN else { break }
+                guard waitsocket() > 0 else { break }
+            } while true
+            return ret
         }
-        repeat {
-            ret = callback()
-            guard wait, rawSession != nil, libssh2_session_last_errno(rawSession) == LIBSSH2_ERROR_EAGAIN else { break }
-            guard waitsocket() > 0 else { break }
-        } while true
-        return ret
     }
 
     /// Adds a new operation to the job queue.

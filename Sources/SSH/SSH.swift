@@ -9,7 +9,7 @@ import Foundation
 import Proxy
 import Socket
 
-public class SSH {
+public class SSH: Lock {
     /// The current version of the SSH library.
     ///
     /// This constant holds the version number of the SSH library as a string.
@@ -66,8 +66,8 @@ public class SSH {
     /// The delegate responsible for handling channel-related events.
     public var channelDelegate: ChannelDelegate?
 
-    var lockRow = NSLock()
-    var lockSSH2 = NSLock()
+    let lock = Lock()
+    let waitGroup = WaitGroup()
 
     let queue: DispatchQueue = .global()
     var socketShell: DispatchSourceRead?

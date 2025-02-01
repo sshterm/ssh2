@@ -321,11 +321,9 @@ public extension SSH {
     func freeChannel() {
         if let rawChannel {
             libssh2_channel_set_blocking(rawChannel, 0)
-            lockSSH2.lock()
-            defer {
-                lockSSH2.unlock()
+            callSSH2 {
+                libssh2_channel_free(rawChannel)
             }
-            libssh2_channel_free(rawChannel)
             addOperation {
                 self.channelDelegate?.disconnect(ssh: self)
             }
