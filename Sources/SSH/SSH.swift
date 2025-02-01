@@ -69,14 +69,14 @@ public class SSH: Lock {
     let lock = Lock()
     let waitGroup = WaitGroup()
 
-    let queue: DispatchQueue = .global()
+    let queue: DispatchQueue = .global(qos: .background)
     var socketShell: DispatchSourceRead?
     var keepAliveSource: DispatchSourceTimer?
 
     /// An `OperationQueue` instance used to manage and execute a collection of operations.
     /// This queue allows for the concurrent execution of multiple operations, providing
     /// a way to manage dependencies and priorities among them.
-    let job = OperationQueue()
+    let job: OperationQueue = .main
 
     /// The raw pointers to the SSH session, channel, and SFTP session.
     /// - `rawSession`: A pointer to the SSH session.

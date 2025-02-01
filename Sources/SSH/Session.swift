@@ -129,7 +129,7 @@ public extension SSH {
         }
         libssh2_keepalive_config(rawSession, 1, keepaliveInterval.load())
         cancelKeepalive()
-        keepAliveSource = DispatchSource.makeTimerSource(queue: .global(qos: .background))
+        keepAliveSource = DispatchSource.makeTimerSource(queue: queue)
 
         guard let keepAliveSource else {
             return
@@ -140,7 +140,9 @@ public extension SSH {
             sendKeepalive()
         }
         keepAliveSource.setCancelHandler {
-            self.keepAliveSource = nil
+            #if DEBUG
+                print("心跳取消")
+            #endif
         }
         keepAliveSource.resume()
     }
@@ -197,15 +199,15 @@ public extension SSH {
         }
         let seconds: Buffer<Int32> = .init()
         let rc = libssh2_keepalive_send(rawSession, seconds.buffer)
+        #if DEBUG
+            print("心跳秒", seconds.pointee)
+        #endif
         guard rc == LIBSSH2_ERROR_NONE else {
             if rc == LIBSSH2_ERROR_SOCKET_SEND {
                 resumeKeepalive()
             }
             return
         }
-        #if DEBUG
-            print("心跳秒", seconds.pointee)
-        #endif
     }
 
     /// A computed property that manages the blocking mode of the SSH session.
@@ -352,6 +354,7 @@ public extension SSH {
     ///
     /// - Note: Ensure that no operations are being performed on the SSH connection before calling this method.
     func free() {
+        job.cancelAllOperations()
         waitGroup.with {
             closeShell()
         }
