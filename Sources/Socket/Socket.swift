@@ -72,14 +72,11 @@ public extension Socket {
     static func create(_ host: String, _ port: String, _ timeout: Int) -> Socket {
         var socket: Socket = .init()
         socket.port = port
-        // var fd: Int32 = -1
-        // var hostname = ""
         IP.getAddrInfo(host: host, port: port) { info in
             socket.fd = Darwin.socket(info.pointee.ai_family, info.pointee.ai_socktype, info.pointee.ai_protocol)
             if socket.fd < 0 {
                 return false
             }
-
             var timeoutStruct = Darwin.timeval(tv_sec: timeout, tv_usec: 0)
             setsockopt(socket.fd, SOL_SOCKET, SO_SNDTIMEO, &timeoutStruct, socklen_t(MemoryLayout<Darwin.timeval>.size))
             setsockopt(socket.fd, SOL_SOCKET, SO_RCVTIMEO, &timeoutStruct, socklen_t(MemoryLayout<Darwin.timeval>.size))
@@ -88,13 +85,13 @@ public extension Socket {
                 socket.fd = -1
                 return false
             }
-            var name = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-            guard Darwin.getnameinfo(info.pointee.ai_addr, info.pointee.ai_addrlen, &name, socklen_t(name.count), nil, 0, NI_NUMERICHOST) == 0 else {
+            let buf: Buffer<CChar> = .init(Int(NI_MAXHOST))
+            guard Darwin.getnameinfo(info.pointee.ai_addr, info.pointee.ai_addrlen, buf.buffer, socklen_t(buf.count), nil, 0, NI_NUMERICHOST) == 0 else {
                 socket.close()
                 socket.fd = -1
                 return false
             }
-            socket.hostname = name.string
+            socket.hostname = buf.buffer.string
             return true
         }
         return socket
