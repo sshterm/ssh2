@@ -71,11 +71,11 @@ public extension SSH {
                 }
                 libssh2_session_abstract(sess).address.ssh.trace(message: message, messageLen: messageLen)
             }
-            let send: sendType = { socket, buffer, length, flags, abstract in
-                abstract.ssh.send(socket: socket, buffer: buffer, length: length, flags: flags)
+            let send: sendType = { fd, buffer, length, flags, abstract in
+                abstract.ssh.send(fd: fd, buffer: buffer, length: length, flags: flags)
             }
-            let recv: recvType = { socket, buffer, length, flags, abstract in
-                abstract.ssh.recv(socket: socket, buffer: buffer, length: length, flags: flags)
+            let recv: recvType = { fd, buffer, length, flags, abstract in
+                abstract.ssh.recv(fd: fd, buffer: buffer, length: length, flags: flags)
             }
             let debug: debugType = { sess, reason, message, messageLen, language, languageLen, abstract in
                 abstract.ssh.debug(sess: sess, reason: reason, message: message, messageLen: messageLen, language: language, languageLen: languageLen)
@@ -98,7 +98,7 @@ public extension SSH {
             libssh2_session_set_timeout(rawSession, timeout * 1000)
             libssh2_session_banner_set(rawSession, clientbanner)
             let rec = callSSH2 {
-                libssh2_session_handshake(rawSession, socket)
+                libssh2_session_handshake(rawSession, socket.fd)
             }
             guard rec == LIBSSH2_ERROR_NONE else {
                 freeSession()

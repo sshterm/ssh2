@@ -7,7 +7,17 @@ import Extension
 import Foundation
 import Network
 
-public typealias Socket = Int32
+public struct Socket {
+    public internal(set) var fd: Int32 = -1
+    public internal(set) var hostname: String = ""
+    public internal(set) var port: String = ""
+
+    public init(fd: Int32 = -1) {
+        self.fd = fd
+    }
+}
+
+// public typealias Socket = Int32
 
 public extension Socket {
     /// A computed property that checks if the socket is connected.
@@ -18,13 +28,13 @@ public extension Socket {
     ///
     /// - Returns: A Boolean value indicating whether the socket is connected.
     var isConnected: Bool {
-        guard self != -1 else {
+        guard fd != -1 else {
             return false
         }
         var optval: Int32 = 0
         var optlen: socklen_t = Darwin.socklen_t(MemoryLayout<Int32>.size)
         let result = withUnsafeMutablePointer(to: &optval) {
-            getsockopt(self, SOL_SOCKET, SO_ERROR, $0, &optlen)
+            getsockopt(fd, SOL_SOCKET, SO_ERROR, $0, &optlen)
         }
         return result == 0 && optval == 0
     }
@@ -41,12 +51,12 @@ public extension Socket {
     ///
     /// - Note: Uses Darwin's `shutdown` and `close` functions.
     func shutdown(_ how: Shout = .rw) {
-        if self != -1 {
+        if fd != -1 {
             switch how {
             case .rw:
                 close()
             default:
-                Darwin.shutdown(self, how.raw)
+                Darwin.shutdown(fd, how.raw)
             }
         }
     }
@@ -60,32 +70,34 @@ public extension Socket {
     ///
     /// - Returns: A socket file descriptor (`Sock`) on success, or `-1` on failure.
     static func create(_ host: String, _ port: String, _ timeout: Int) -> Socket {
-        var fd: Int32 = -1
+        var socket: Socket = .init()
+        socket.port = port
+        // var fd: Int32 = -1
         // var hostname = ""
         IP.getAddrInfo(host: host, port: port) { info in
-            fd = Darwin.socket(info.pointee.ai_family, info.pointee.ai_socktype, info.pointee.ai_protocol)
-            if fd < 0 {
+            socket.fd = Darwin.socket(info.pointee.ai_family, info.pointee.ai_socktype, info.pointee.ai_protocol)
+            if socket.fd < 0 {
                 return false
             }
 
             var timeoutStruct = Darwin.timeval(tv_sec: timeout, tv_usec: 0)
-            setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &timeoutStruct, socklen_t(MemoryLayout<Darwin.timeval>.size))
-            setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeoutStruct, socklen_t(MemoryLayout<Darwin.timeval>.size))
-            if Darwin.connect(fd, info.pointee.ai_addr, info.pointee.ai_addrlen) != 0 {
-                fd.close()
-                fd = -1
+            setsockopt(socket.fd, SOL_SOCKET, SO_SNDTIMEO, &timeoutStruct, socklen_t(MemoryLayout<Darwin.timeval>.size))
+            setsockopt(socket.fd, SOL_SOCKET, SO_RCVTIMEO, &timeoutStruct, socklen_t(MemoryLayout<Darwin.timeval>.size))
+            if Darwin.connect(socket.fd, info.pointee.ai_addr, info.pointee.ai_addrlen) != 0 {
+                socket.close()
+                socket.fd = -1
                 return false
             }
-//            var name = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-//            guard Darwin.getnameinfo(info.pointee.ai_addr, info.pointee.ai_addrlen, &name, socklen_t(name.count), nil, 0, NI_NUMERICHOST) == 0 else {
-//                fd.close()
-//                fd = -1
-//                return false
-//            }
-//            hostname = name.string
+            var name = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+            guard Darwin.getnameinfo(info.pointee.ai_addr, info.pointee.ai_addrlen, &name, socklen_t(name.count), nil, 0, NI_NUMERICHOST) == 0 else {
+                socket.close()
+                socket.fd = -1
+                return false
+            }
+            socket.hostname = name.string
             return true
         }
-        return fd
+        return socket
     }
 
     /// Sends data through the socket.
@@ -97,7 +109,7 @@ public extension Socket {
     ///
     /// - Returns: The number of bytes sent on success, or a negative error code on failure.
     func send(_ buffer: UnsafeRawPointer, _ length: Int, _ flags: Int32 = 0) -> Int {
-        let size = Darwin.send(self, buffer, length, flags)
+        let size = Darwin.send(fd, buffer, length, flags)
         if size < 0 {
             return Int(-errno)
         }
@@ -112,7 +124,7 @@ public extension Socket {
     ///   - flags: The flags to control the behavior of the receive function. Defaults to 0.
     /// - Returns: The number of bytes received, or a negative error code if the receive operation fails.
     func recv(_ buffer: UnsafeMutableRawPointer, _ length: Int, _ flags: Int32 = 0) -> Int {
-        let size = Darwin.recv(self, buffer, length, flags)
+        let size = Darwin.recv(fd, buffer, length, flags)
         if size < 0 {
             return Int(-errno)
         }
@@ -126,7 +138,7 @@ public extension Socket {
     ///   - len: The maximum number of bytes to read.
     /// - Returns: The number of bytes actually read, or a negative value if an error occurred.
     func read(_ buffer: UnsafeMutableRawPointer, _ len: Int) -> Int {
-        Darwin.read(self, buffer, len)
+        Darwin.read(fd, buffer, len)
     }
 
     /// Writes data from the provided buffer to the socket.
@@ -136,7 +148,7 @@ public extension Socket {
     ///   - len: The number of bytes to write from the buffer.
     /// - Returns: The number of bytes that were written, or a negative value if an error occurred.
     func write(_ buffer: UnsafeRawPointer, _ len: Int) -> Int {
-        Darwin.write(self, buffer, len)
+        Darwin.write(fd, buffer, len)
     }
 
     /// Closes the socket file descriptor.
@@ -145,7 +157,7 @@ public extension Socket {
     /// associated with the current instance. It is important to call this function to
     /// release the resources associated with the socket.
     func close() {
-        Darwin.close(self)
+        Darwin.close(fd)
     }
 }
 

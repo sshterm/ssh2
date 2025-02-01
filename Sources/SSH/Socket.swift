@@ -17,9 +17,6 @@ public extension SSH {
     ///
     /// - Returns: `true` if the socket is connected, `false` otherwise.
     var isConnected: Bool {
-        guard socket != -1 else {
-            return false
-        }
         return socket.isConnected
     }
 
@@ -29,14 +26,14 @@ public extension SSH {
     /// If the socket file descriptor is invalid, the function returns `false`.
     /// Otherwise, it sets the internal socket file descriptor and returns the connection status.
     ///
-    /// - Parameter sockfd: The socket file descriptor to connect to.
+    /// - Parameter socket: The socket file descriptor to connect to.
     /// - Returns: A boolean value indicating whether the connection was successful.
-    func connect(sockfd: Socket) async -> Bool {
+    func connect(socket: Socket) async -> Bool {
         await call { [self] in
-            guard sockfd != -1 else {
+            guard socket.fd != -1 else {
                 return false
             }
-            self.socket = sockfd
+            self.socket = socket
             return isConnected
         }
     }
@@ -50,12 +47,11 @@ public extension SSH {
     /// - Returns: A `Bool` indicating whether the connection was successfully established.
     func connect() async -> Bool {
         await call { [self] in
-            let sockfd = (proxy != nil) ? Proxy(proxy!).connect(host, port, timeout) : Socket.create(host, port, timeout)
-            guard sockfd != -1 else {
+            let socket = (proxy != nil) ? Proxy(proxy!).connect(host, port, timeout) : Socket.create(host, port, timeout)
+            guard socket.fd != -1 else {
                 return false
             }
-            self.socket = sockfd
-            self.hostname = hostname
+            self.socket = socket
             return isConnected
         }
     }
@@ -63,12 +59,12 @@ public extension SSH {
     /// Sends data through the specified socket.
     ///
     /// - Parameters:
-    ///   - socket: The socket through which data will be sent.
+    ///   - fd: The socket through which data will be sent.
     ///   - buffer: A pointer to the data to be sent.
     ///   - length: The length of the data to be sent.
     ///   - flags: Flags that influence the behavior of the send operation.
     /// - Returns: The number of bytes sent, or a negative error code if the send operation fails.
-    func send(socket: Socket, buffer: UnsafeRawPointer, length: size_t, flags: CInt) -> Int {
+    func send(fd _: Int32, buffer: UnsafeRawPointer, length: size_t, flags: CInt) -> Int {
         let size = socket.send(buffer, length, flags)
         if size > 0 {
             addOperation {
@@ -81,12 +77,12 @@ public extension SSH {
     /// Receives data from a socket.
     ///
     /// - Parameters:
-    ///   - socket: The socket from which to receive data.
+    ///   - fd: The socket from which to receive data.
     ///   - buffer: A pointer to the buffer where the received data will be stored.
     ///   - length: The maximum number of bytes to receive.
     ///   - flags: Flags that influence the behavior of the receive operation.
     /// - Returns: The number of bytes received, or a negative error code if the operation fails.
-    func recv(socket: Socket, buffer: UnsafeMutableRawPointer, length: size_t, flags: CInt) -> Int {
+    func recv(fd _: Int32, buffer: UnsafeMutableRawPointer, length: size_t, flags: CInt) -> Int {
         let size = socket.recv(buffer, length, flags)
         if size > 0 {
             addOperation {
@@ -102,11 +98,9 @@ public extension SSH {
     ///   The default value is `.rw`, which shuts down both reading and writing.
     ///   If `.rw` is specified, the socket will also be closed.
     func shutdown(_ how: Shout = .rw) {
-        if socket != -1 {
-            socket.shutdown(how)
-            if how == .rw {
-                socket = -1
-            }
+        socket.shutdown(how)
+        if how == .rw {
+            socket = .init()
         }
     }
 
@@ -119,7 +113,7 @@ public extension SSH {
     ///   - `-1` if the session or socket file descriptor is invalid.
     ///   - The result of the `poll` call otherwise.
     func waitsocket() -> Int32 {
-        guard rawSession != nil, socket != -1 else {
+        guard rawSession != nil, socket.fd != -1 else {
             return -1
         }
         var events: UInt = 0
@@ -130,7 +124,7 @@ public extension SSH {
         if dir & LIBSSH2_SESSION_BLOCK_OUTBOUND != 0 {
             events |= UInt(LIBSSH2_POLLFD_POLLOUT)
         }
-        var fds = [LIBSSH2_POLLFD(type: LIBSSH2_POLLFD_SOCKET.load(), fd: .init(socket: socket), events: events, revents: 1)]
+        var fds = [LIBSSH2_POLLFD(type: LIBSSH2_POLLFD_SOCKET.load(), fd: .init(socket: socket.fd), events: events, revents: 1)]
         let rc = libssh2_poll(&fds, 1, timeout * 1000)
         return rc
     }

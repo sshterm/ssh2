@@ -89,8 +89,12 @@
             let out = BIO_new(BIO_s_mem())!
             defer { BIO_free(out) }
             let kstr = password.trim
-            let klen: Int32 = kstr.count.load()
-            PEM_write_bio_PrivateKey(out, privKey, EVP_aes_256_cbc(), kstr, klen, nil, nil)
+            if kstr.isEmpty {
+                PEM_write_bio_PrivateKey(out, privKey, nil, nil, 0, nil, nil)
+            } else {
+                let klen: Int32 = kstr.count.load()
+                PEM_write_bio_PrivateKey(out, privKey, EVP_aes_256_cbc(), kstr, klen, nil, nil)
+            }
             let str = bioToString(bio: out)
             return str
         }

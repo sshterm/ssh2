@@ -26,20 +26,19 @@ public extension Proxy {
     ///
     /// - Throws: This method does not throw exceptions but returns `false` if any step of the connection process fails.
     func connect(_ host: String, _ port: String, _ timeout: Int = 5) -> Socket {
-        let fd = Socket.create(configuration.host, configuration.port, timeout)
-        var hostname = ""
-        guard fd != -1 else {
-            return -1
+        let socket = Socket.create(configuration.host, configuration.port, timeout)
+        guard socket.isConnected else {
+            return .init()
         }
 
         for ip in IP.resolveDomainName(host) {
-            guard connect(fd, ip, port) else {
+            guard connect(socket, ip, port) else {
                 continue
             }
-            return fd
+            return socket
         }
-        fd.close()
-        return -1
+        socket.close()
+        return socket
     }
 
     func connect(_ fd: Socket, _ host: String, _ port: String) -> Bool {

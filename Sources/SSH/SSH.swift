@@ -30,7 +30,7 @@ public class SSH {
     /// This array contains the default filenames `"."` and `".."` which are typically used to represent the current directory and the parent directory, respectively.
     public var ignoredfiles = [".", ".."]
 
-    public internal(set) var socket: Socket = -1
+    public internal(set) var socket: Socket = .init()
     public let host: String
     public let port: String
     public var user: String
@@ -50,8 +50,6 @@ public class SSH {
 
     /// A string representing the banner message for the SSH session.
     public var banner = ""
-
-    public internal(set) var hostname: IP = ""
 
     public var proxy: ProxyConfiguration?
 

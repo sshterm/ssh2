@@ -109,7 +109,7 @@ public extension SSH {
     func pollShell() {
         channelBlocking(false)
         cancelShell()
-        socketShell = DispatchSource.makeReadSource(fileDescriptor: socket, queue: queue)
+        socketShell = DispatchSource.makeReadSource(fileDescriptor: socket.fd, queue: queue)
         socketShell?.setEventHandler { [self] in
             let (rc, erc) = read(PipeOutputStream { data in
                 onData(data, true)
