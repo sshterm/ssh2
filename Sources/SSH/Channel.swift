@@ -257,7 +257,7 @@ public extension SSH {
     /// - Returns: A Boolean value indicating whether the SSH channel has received an exit status.
     var receivedExit: Bool {
         guard let rawChannel else {
-            return false
+            return true
         }
         return libssh2_channel_get_exit_status(rawChannel) != 0
     }
@@ -270,7 +270,7 @@ public extension SSH {
     /// - Returns: A Boolean value indicating whether the EOF has been received.
     var receivedEOF: Bool {
         guard let rawChannel else {
-            return false
+            return true
         }
         return libssh2_channel_eof(rawChannel) != 0
     }
