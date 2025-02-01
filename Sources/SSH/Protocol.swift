@@ -26,18 +26,6 @@ public protocol SessionDelegate {
     ///   the handshake successfully will result in an insecure or non-functional SSH connection.
     func handshake(ssh: SSH, pubkey: Hostkey) -> Bool
 
-    /// Authenticates the user with the SSH server using the provided credentials.
-    ///
-    /// - Parameters:
-    ///   - ssh: The `SSH` instance representing the connection to the SSH server.
-    /// - Returns: Void.
-    ///
-    /// This method handles the authentication process with the SSH server. Depending on the implementation,
-    /// it may support various authentication methods such as password, public key, or keyboard-interactive.
-    ///
-    /// - Warning: Authentication failure may result in denied access to the SSH server.
-    func authenticate(ssh: SSH)
-
     /// Called when a keyboard-interactive authentication prompt is received.
     /// - Parameters:
     ///   - ssh: The SSH session instance.

@@ -112,12 +112,6 @@ public extension SSH {
                 return false
             }
 
-            defer {
-                addOperation {
-                    sessionDelegate?.authenticate(ssh: self)
-                }
-            }
-
             return true
         }
     }
@@ -235,6 +229,34 @@ public extension SSH {
         }
     }
 
+    /// The `sessionTimeout` property represents the timeout for the SSH session in seconds.
+    ///
+    /// - Note: The timeout value is stored in seconds, but it is converted to milliseconds
+    ///   when passed to the underlying `libssh2` library.
+    ///
+    /// - Getting the timeout:
+    ///   This returns the current session timeout in seconds. If there is no active session,
+    ///   it returns `0`.
+    ///
+    /// - Setting the timeout:
+    ///   This sets the session timeout to a new value in seconds. The value is multiplied by `1000`
+    ///   to convert it to milliseconds before being passed to `libssh2_session_set_timeout`.
+    ///
+    var sessionTimeout: Int {
+        set {
+            if let rawSession {
+                libssh2_session_set_timeout(rawSession, newValue * 1000)
+            }
+        }
+        get {
+            guard let rawSession else {
+                return 0
+            }
+
+            return libssh2_session_get_timeout(rawSession) / 1000
+        }
+    }
+
     /// Generates the fingerprint of the host key using the specified SHA algorithm.
     ///
     /// - Parameter algorithm: The SHA algorithm to use for generating the fingerprint. Defaults to `.sha256`.
@@ -330,9 +352,15 @@ public extension SSH {
     ///
     /// - Note: Ensure that no operations are being performed on the SSH connection before calling this method.
     func free() {
-        closeShell()
-        freeChannel()
-        freeSFTP()
+        waitGroup.with {
+            closeShell()
+        }
+        waitGroup.with {
+            freeChannel()
+        }
+        waitGroup.with {
+            freeSFTP()
+        }
         freeSession()
     }
 
