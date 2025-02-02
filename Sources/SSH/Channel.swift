@@ -146,23 +146,27 @@ public extension SSH {
 //        await read(stderr: stderr, wait: wait, bufferSize: bufferSize)
 //    }
     func exec(_ command: String) async -> Data? {
-        guard await await openChannel() else {
+        isBlocking = true
+        guard await openChannel() else {
             return nil
         }
         guard await exec(command) else {
-            sendEOF()
+            freeChannel()
             return nil
         }
-        channelBlocking(false)
         var data = Data()
-        let rc = read(PipeOutputStream { d in
-            data.append(d)
-            return true
-        })
-        sendEOF()
-        guard rc >= 0 else {
-            return nil
-        }
+        let buf: Buffer<UInt8> = .init(bufferSize)
+        var rc: Int
+        repeat {
+            rc = callSSH2 { [self] in
+                libssh2_channel_read_ex(rawChannel, 0, buf.buffer, buf.count)
+            }
+            guard rc > 0 else {
+                break
+            }
+            data.append(buf.buffer, count: rc)
+        } while rc > 0
+        freeChannel()
         return data
     }
 
@@ -352,6 +356,9 @@ public extension SSH {
     func freeChannel() {
         if let rawChannel {
             libssh2_channel_set_blocking(rawChannel, 0)
+            callSSH2 {
+                libssh2_channel_close(rawChannel)
+            }
             callSSH2 {
                 libssh2_channel_free(rawChannel)
             }

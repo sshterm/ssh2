@@ -116,16 +116,38 @@ public extension SSH {
         guard rawSession != nil, socket.fd != -1 else {
             return -1
         }
-        var events: UInt = 0
+        // 设置超时时间
+        var timeout = Darwin.timeval(tv_sec: self.timeout, tv_usec: 0)
+
+        // 初始化文件描述符集合
+        var fdSet, readFd, writeFd: Darwin.fd_set
+        fdSet = Darwin.fd_set()
+        readFd = Darwin.fd_set()
+        writeFd = Darwin.fd_set()
+        fdSet.zero()
+        fdSet.set(socket.fd)
+        readFd.zero()
+        writeFd.zero()
+
+        // 获取会话阻塞方向
         let dir = libssh2_session_block_directions(rawSession)
-        if dir & LIBSSH2_SESSION_BLOCK_INBOUND != 0 {
-            events |= UInt(LIBSSH2_POLLFD_POLLIN)
+
+        // 如果会话阻塞在入站方向
+        if (dir & LIBSSH2_SESSION_BLOCK_INBOUND) != 0 {
+            readFd = fdSet
         }
-        if dir & LIBSSH2_SESSION_BLOCK_OUTBOUND != 0 {
-            events |= UInt(LIBSSH2_POLLFD_POLLOUT)
+
+        // 如果会话阻塞在出站方向
+        if (dir & LIBSSH2_SESSION_BLOCK_OUTBOUND) != 0 {
+            writeFd = fdSet
         }
-        var fds = [LIBSSH2_POLLFD(type: LIBSSH2_POLLFD_SOCKET.load(), fd: .init(socket: socket.fd), events: events, revents: 1)]
-        let rc = libssh2_poll(&fds, 1, timeout * 1000)
+
+        let rc = Darwin.select(socket.fd + 1, &readFd, &writeFd, nil, &timeout)
+
+        #if DEBUG
+            print("阻塞:\(rc) dir: \(dir)")
+        #endif
+
         return rc
     }
 

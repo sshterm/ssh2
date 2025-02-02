@@ -36,4 +36,12 @@ public extension String {
         guard !hasPrefix(prefix) else { return self }
         return prefix + self
     }
+
+    func appendingPathComponent(_ str: String) -> String {
+        return (self as NSString).appendingPathComponent(str)
+    }
+
+    var fields: [String] {
+        components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }
+    }
 }
