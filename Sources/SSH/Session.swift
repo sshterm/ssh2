@@ -200,7 +200,7 @@ public extension SSH {
         let seconds: Buffer<Int32> = .init()
         let rc = libssh2_keepalive_send(rawSession, seconds.buffer)
         #if DEBUG
-            print("心跳秒", seconds.pointee)
+            print("心跳秒", seconds.pointee, rc)
         #endif
         guard rc == LIBSSH2_ERROR_NONE else {
             if rc == LIBSSH2_ERROR_SOCKET_SEND {

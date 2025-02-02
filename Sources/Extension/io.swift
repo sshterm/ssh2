@@ -43,7 +43,7 @@ public class io {
         let buffer: Buffer<UInt8> = .init(bufferSize)
         var total = 0
         var nread, rc: Int
-        while r.hasBytesAvailable {
+        while r.hasBytesAvailable && w.hasSpaceAvailable {
             nread = r.read(buffer.buffer, maxLength: buffer.count)
             guard nread >= 0 else {
                 return nread

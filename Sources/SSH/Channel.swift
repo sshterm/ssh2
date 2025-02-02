@@ -52,10 +52,15 @@ public extension SSH {
         guard await exec("echo \">TEST<\"") else {
             return false
         }
-        guard let data = await read(bufferSize: 6) else {
+        let buf: Buffer<UInt8> = .init(6)
+        let code = callSSH2 { [self] in
+            libssh2_channel_read_ex(rawChannel, 0, buf.buffer, 6)
+        }
+        guard code > 0 else {
             return false
         }
-        guard data.string?.trim.hasPrefix(">TEST<") ?? false else {
+
+        guard buf.data(6).string?.trim.hasPrefix(">TEST<") ?? false else {
             return false
         }
         return true
@@ -89,7 +94,7 @@ public extension SSH {
     ///   - value: The value of the environment variable to set.
     /// - Returns: A boolean value indicating whether the environment variable was successfully set.
     /// - Note: This function is asynchronous and uses the `await` keyword to perform the operation.
-    func setenv(name: String, value: String) async -> Bool {
+    func setEnv(name: String, value: String) async -> Bool {
         guard let rawChannel else {
             return false
         }
@@ -137,25 +142,45 @@ public extension SSH {
     ///           The default value is `true`.
     ///
     /// - Returns: An optional `Data` object containing the read data, or `nil` if an error occurs or no data is available.
-    func read(stderr: Bool = false, wait: Bool = true) async -> Data? {
-        await read(stderr: stderr, wait: wait, bufferSize: bufferSize)
-    }
-
-    func read(stderr: Bool = false, wait: Bool = true, bufferSize: Int) async -> Data? {
-        guard let rawChannel else {
+//    func read(stderr: Bool = false, wait: Bool = true) async -> Data? {
+//        await read(stderr: stderr, wait: wait, bufferSize: bufferSize)
+//    }
+    func exec(_ command: String) async -> Data? {
+        guard await await openChannel() else {
             return nil
         }
-        return await call { [self] in
-            let buf: Buffer<UInt8> = .init(bufferSize)
-            let count = callSSH2(wait) {
-                libssh2_channel_read_ex(rawChannel, stderr ? SSH_EXTENDED_DATA_STDERR : 0, buf.buffer, buf.count)
-            }
-            guard count >= 0 else {
-                return nil
-            }
-            return buf.data(count.load())
+        guard await exec(command) else {
+            sendEOF()
+            return nil
         }
+        channelBlocking(false)
+        var data = Data()
+        let rc = read(PipeOutputStream { d in
+            data.append(d)
+            return true
+        })
+        sendEOF()
+        guard rc >= 0 else {
+            return nil
+        }
+        return data
     }
+
+//    func read(stderr: Bool = false, wait: Bool = true, bufferSize: Int) async -> Data? {
+//        guard let rawChannel else {
+//            return nil
+//        }
+//        return await call { [self] in
+//            let buf: Buffer<UInt8> = .init(bufferSize)
+//            let count = callSSH2(wait) {
+//                libssh2_channel_read_ex(rawChannel, stderr ? SSH_EXTENDED_DATA_STDERR : 0, buf.buffer, buf.count)
+//            }
+//            guard count >= 0 else {
+//                return nil
+//            }
+//            return buf.data(count.load())
+//        }
+//    }
 
     /// Reads data from the channel and writes it to the specified output stream.
     ///
@@ -187,6 +212,12 @@ public extension SSH {
         rc = read(stdout, wait: false)
         erc = read(stderr, err: true, wait: false)
         return (rc, erc)
+    }
+
+    func read(_ stdout: OutputStream, _ err: Bool = false) -> Int {
+        var rc: Int
+        rc = read(stdout, err: err, wait: true)
+        return rc
     }
 
     /// Initiates a subsystem request on the SSH channel.

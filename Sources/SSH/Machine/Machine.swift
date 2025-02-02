@@ -6,52 +6,11 @@ import CSSH
 import Foundation
 
 public extension SSH {
-    /// 检查是否为回显通道
-    /// 该函数尝试打开一个SSH通道，并执行'echo '>TEST<'命令来检查通道是否为回显通道。
-    /// 如果通道是回显通道，它将返回true，否则返回false。
-    func isEcho() async -> Bool {
-        guard await openChannel() else {
-            return false
-        }
-        defer {
-            self.close(.channel)
-        }
-        let code = callSSH2 {
-            guard let rawChannel = self.rawChannel else {
-                return -1
-            }
-            return libssh2_channel_process_startup(rawChannel, "exec", 4, "echo \">TEST<\"", 13)
-        }
-        guard code == LIBSSH2_ERROR_NONE else {
-            return false
-        }
-        let buffer = UnsafeMutablePointer<CChar>.allocate(capacity: 6)
-        defer {
-            buffer.deallocate()
-        }
-        let rc = callSSH2 {
-            guard let rawChannel = self.rawChannel else {
-                return -1
-            }
-            return libssh2_channel_read_ex(rawChannel, 0, buffer, 6)
-        }
-        guard rc == 6 else {
-            return false
-        }
-        guard let test = ">TEST<".data(using: .utf8) else {
-            return false
-        }
-        guard Data(bytes: buffer, count: 6).range(of: test) != nil else {
-            return false
-        }
-        return true
-    }
-
     /// 获取系统的平均负载信息
     /// - Returns: 返回一个可选的LoadAverage结构体，如果获取失败则返回nil
     func getLoadAverage() async -> LoadAverage? {
-        let (text, _) = await exec(command: "cat /proc/loadavg")
-        guard let text = text?.trim(),!text.isEmpty else {
+        let text: Data? = await exec("cat /proc/loadavg")
+        guard let text = text?.string?.trim,!text.isEmpty else {
             return nil
         }
         let lines = text.components(separatedBy: .whitespaces)
@@ -87,8 +46,8 @@ public extension SSH {
     /// 获取内存信息的异步函数
     /// - Returns: 返回一个可选的MemoryInfo结构体，如果获取失败则返回nil
     func getMemoryInfo() async -> MemoryInfo? {
-        let (text, _) = await exec(command: "cat /proc/meminfo")
-        guard let text = text?.trim(),!text.isEmpty else {
+        let text: Data? = await exec("cat /proc/meminfo")
+        guard let text = text?.string?.trim,!text.isEmpty else {
             return nil
         }
 
@@ -130,8 +89,8 @@ public extension SSH {
     /// 获取系统状态的异步函数
     /// - Returns: 返回一个可选的SystemStat结构体，如果获取失败则返回nil
     func getSystemStat() async -> SystemStat? {
-        let (text, _) = await exec(command: "cat /proc/stat |grep -E \"ctxt|btime|procs_running|procs_blocked\"")
-        guard let text = text?.trim(),!text.isEmpty else {
+        let text: Data? = await exec("cat /proc/stat |grep -E \"ctxt|btime|procs_running|procs_blocked\"")
+        guard let text = text?.string?.trim,!text.isEmpty else {
             return nil
         }
         let lines = text.components(separatedBy: .newlines)
@@ -227,8 +186,8 @@ public extension SSH {
     /// - Parameter sleep: 在获取两次CPU时间之间等待的秒数，默认为1秒
     /// - Returns: 返回一个包含两个CpuTimes对象的数组，分别代表获取时间点前后的CPU时间信息，如果获取失败则返回nil
     private func getCpuTimes(sleep: Int = 1) async -> [CpuTimes]? {
-        let (text, _) = await exec(command: "cpuTime1=$(cat /proc/stat |grep 'cpu ' |awk '{print $2\",\"$3\",\"$4\",\"$5\",\"$6\",\"$7\",\"$8\",\"$9\",\"$10\",\"$11}')\nsleep \(sleep)\ncpuTime2=$(cat /proc/stat |grep 'cpu ' |awk '{print $2\",\"$3\",\"$4\",\"$5\",\"$6\",\"$7\",\"$8\",\"$9\",\"$10\",\"$11}')\necho \"$cpuTime1|$cpuTime2\"")
-        guard let text = text?.trim(),!text.isEmpty else {
+        let text: Data? = await exec("cpuTime1=$(cat /proc/stat |grep 'cpu ' |awk '{print $2\",\"$3\",\"$4\",\"$5\",\"$6\",\"$7\",\"$8\",\"$9\",\"$10\",\"$11}')\nsleep \(sleep)\ncpuTime2=$(cat /proc/stat |grep 'cpu ' |awk '{print $2\",\"$3\",\"$4\",\"$5\",\"$6\",\"$7\",\"$8\",\"$9\",\"$10\",\"$11}')\necho \"$cpuTime1|$cpuTime2\"")
+        guard let text = text?.string?.trim,!text.isEmpty else {
             return nil
         }
 
@@ -263,8 +222,8 @@ public extension SSH {
     // - 返回值:
     //   - DiskIoInfoAll对象，包含磁盘的读写统计信息，如果获取失败则返回nil
     func getDiskIoInfoAll(sleep: Int = 1) async -> DiskIoInfoAll? {
-        let (text, _) = await exec(command: "diskRun1=$(cat /proc/diskstats |awk '{print $3\",\"$4\",\"$5\",\"$6\",\"$7\",\"$8\",\"$9\",\"$10\",\"$11\",\"$12\",\"$13\",\"$14}')\nsleep \(sleep)\ndiskRun2=$(cat /proc/diskstats |awk '{print $3\",\"$4\",\"$5\",\"$6\",\"$7\",\"$8\",\"$9\",\"$10\",\"$11\",\"$12\",\"$13\",\"$14}')\necho \"$diskRun1|$diskRun2\"")
-        guard let text = text?.trim(),!text.isEmpty else {
+        let text: Data? = await exec("diskRun1=$(cat /proc/diskstats |awk '{print $3\",\"$4\",\"$5\",\"$6\",\"$7\",\"$8\",\"$9\",\"$10\",\"$11\",\"$12\",\"$13\",\"$14}')\nsleep \(sleep)\ndiskRun2=$(cat /proc/diskstats |awk '{print $3\",\"$4\",\"$5\",\"$6\",\"$7\",\"$8\",\"$9\",\"$10\",\"$11\",\"$12\",\"$13\",\"$14}')\necho \"$diskRun1|$diskRun2\"")
+        guard let text = text?.string?.trim,!text.isEmpty else {
             return nil
         }
 
@@ -358,8 +317,8 @@ public extension SSH {
     /// - Parameter sleep: 两次采样之间的等待时间（秒）
     /// - Returns: 网络IO信息结构体，如果获取失败则返回nil
     func getNetworkIoInfoAll(sleep: Int = 1) async -> NetworkIoInfoAll? {
-        let (text, _) = await exec(command: "networkRun1=$(cat /proc/net/dev | tail -n +3 |awk '{print $1\",\"$2\",\"$3\",\"$4\",\"$5\",\"$6\",\"$7\",\"$8\",\"$9\",\"$10\",\"$11\",\"$12\",\"$13}')\nsleep \(sleep)\nnetworkRun2=$(cat /proc/net/dev | tail -n +3 |awk '{print $1\",\"$2\",\"$3\",\"$4\",\"$5\",\"$6\",\"$7\",\"$8\",\"$9\",\"$10\",\"$11\",\"$12\",\"$13}')\necho \"$networkRun1|$networkRun2\"")
-        guard let text = text?.trim(),!text.isEmpty else {
+        let text: Data? = await exec("networkRun1=$(cat /proc/net/dev | tail -n +3 |awk '{print $1\",\"$2\",\"$3\",\"$4\",\"$5\",\"$6\",\"$7\",\"$8\",\"$9\",\"$10\",\"$11\",\"$12\",\"$13}')\nsleep \(sleep)\nnetworkRun2=$(cat /proc/net/dev | tail -n +3 |awk '{print $1\",\"$2\",\"$3\",\"$4\",\"$5\",\"$6\",\"$7\",\"$8\",\"$9\",\"$10\",\"$11\",\"$12\",\"$13}')\necho \"$networkRun1|$networkRun2\"")
+        guard let text = text?.string?.trim,!text.isEmpty else {
             return nil
         }
 
@@ -447,8 +406,8 @@ public extension SSH {
     /// 然后将获取到的文本数据转换为Double类型的数组返回。
     /// 如果命令执行失败或转换后的数据为空，则返回nil。
     func getTemp() async -> [Double]? {
-        let (text, _) = await exec(command: "cat /sys/class/hwmon/hwmon[0-9]/temp1_input")
-        guard let text = text?.trim(),!text.isEmpty else {
+        let text: Data? = await exec("cat /sys/class/hwmon/hwmon[0-9]/temp1_input")
+        guard let text = text?.string?.trim,!text.isEmpty else {
             return nil
         }
         let lines = text.components(separatedBy: .newlines).map { Double($0) ?? 0 }.map { $0 / 1000 }
@@ -465,14 +424,14 @@ public extension SSH {
     /// 获取当前系统中的线程信息
     /// - Returns: 返回一个包含线程信息的数组，如果获取失败则返回nil
     func getThreads() async -> [Threads]? {
-        let (text, _) = await exec(command: "ps -eo pid,tid,%cpu,%mem,user,comm,args --sort=-%cpu | awk 'NR>1 {print $1\",\"$2\",\"$3\",\"$4\",\"$5\",\"$6\",\"$7}'")
-        guard let text = text?.trim(),!text.isEmpty else {
+        let text: Data? = await exec("ps -eo pid,tid,%cpu,%mem,user,comm,args --sort=-%cpu | awk 'NR>1 {print $1\",\"$2\",\"$3\",\"$4\",\"$5\",\"$6\",\"$7}'")
+        guard let text = text?.string?.trim,!text.isEmpty else {
             return nil
         }
         let lines = text.components(separatedBy: .newlines)
         var threads: [Threads] = []
         for line in lines {
-            let info = line.trim().components(separatedBy: ",")
+            let info = line.trim.components(separatedBy: ",")
             guard info.count == 7 else {
                 continue
             }
@@ -484,14 +443,14 @@ public extension SSH {
     /// 获取磁盘使用信息
     /// - Returns: 返回一个DiskInfo对象，包含总的已用空间和可用空间，如果获取失败则返回nil
     func getDiskInfo() async -> DiskInfo? {
-        let (text, _) = await exec(command: "df | awk 'NR>1 {print $3\",\"$4}'")
-        guard let text = text?.trim(),!text.isEmpty else {
+        let text: Data? = await exec("df | awk 'NR>1 {print $3\",\"$4}'")
+        guard let text = text?.string?.trim,!text.isEmpty else {
             return nil
         }
         var info = DiskInfo()
         let lines = text.components(separatedBy: .newlines)
         for line in lines {
-            let df = line.trim().components(separatedBy: ",").map { Int64($0) ?? 0 }
+            let df = line.trim.components(separatedBy: ",").map { Int64($0) ?? 0 }
             guard df.count == 2 else {
                 continue
             }

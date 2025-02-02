@@ -265,7 +265,7 @@ class ChannelInputStream: InputStream {
     override func close() {}
 
     override var hasBytesAvailable: Bool {
-        ssh.rawChannel != nil && nread >= 0
+        ssh.rawChannel != nil && nread >= 0 && ssh.isRead
     }
 }
 
