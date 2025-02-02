@@ -1,6 +1,6 @@
 // CPU.swift
 // Copyright (c) 2025 ssh2.app
-// Created by admin@ssh2.app 2025/2/2.
+// Created by admin@ssh2.app 2025/2/3.
 
 import Extension
 import Foundation
@@ -74,7 +74,7 @@ public extension SSH {
                 processorName = value
             case "processor", "cpu number":
                 if c.cpu >= 0 {
-                    // await finishCPUInfo(&c)
+                    await finishCPUInfo(&c)
                     ret.append(c)
                 }
                 c = CPUInfoStat()
@@ -286,7 +286,7 @@ public extension SSH {
             }
         }
         if c.cpu >= 0 {
-            // await finishCPUInfo(&c)
+            await finishCPUInfo(&c)
             ret.append(c)
         }
         return ret
@@ -299,7 +299,7 @@ public extension SSH {
             }
         }
         if let lines = await readLines(sysCPUPath(c.cpu, "cpufreq/cpuinfo_max_freq")),!lines.isEmpty, let value = Double(lines[0]) {
-            c.mhz = value / 1000.0
+            c.mhzMax = value / 1000.0
         }
     }
 

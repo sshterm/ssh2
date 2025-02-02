@@ -68,6 +68,7 @@ public struct CPUInfoStat: Identifiable, Equatable {
     public var coreID: String = ""
     public var modelName: String = ""
     public var mhz: Double = 0.0
+    public var mhzMax: Double = 0.0
     public var cacheSize: Int = 0
     public var flags: [String] = []
     public var microcode: String = ""
