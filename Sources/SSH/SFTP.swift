@@ -57,7 +57,7 @@ public extension SSH {
             guard let rawSFTP else {
                 return nil
             }
-            let buf: Buffer<CChar> = .init(PATH_MAX.load())
+            let buf: Buffer<CChar> = .init(0x400)
             let rc = callSSH2 {
                 libssh2_sftp_symlink_ex(rawSFTP, path, path.count.load(), buf.buffer, buf.count.load(), LIBSSH2_SFTP_READLINK)
             }
@@ -82,7 +82,7 @@ public extension SSH {
             guard let rawSFTP else {
                 return nil
             }
-            let buf: Buffer<CChar> = .init(PATH_MAX.load())
+            let buf: Buffer<CChar> = .init(0x400)
             let rc = callSSH2 {
                 libssh2_sftp_symlink_ex(rawSFTP, path, path.count.load(), buf.buffer, buf.count.load(), LIBSSH2_SFTP_REALPATH)
             }
@@ -367,9 +367,8 @@ public extension SSH {
             }
             var data: [FileAttributes] = []
             var rc: Int32
-            let maxLen = 512
-            var buffer = [UInt8](repeating: 0, count: NAME_MAX.load())
-            var longEntry = [UInt8](repeating: 0, count: PATH_MAX.load())
+            var buffer = [UInt8](repeating: 0, count: 0x200)
+            var longEntry = [UInt8](repeating: 0, count: 0x400)
             var attrs = LIBSSH2_SFTP_ATTRIBUTES()
             repeat {
                 rc = callSSH2 {

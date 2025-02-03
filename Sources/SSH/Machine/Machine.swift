@@ -49,9 +49,7 @@ public extension CPUTimesStat {
 
         return (tot, busy)
     }
-}
 
-extension CPUTimesStat {
     var total: Double {
         user + system + idle + nice + iowait + irq + softirq + steal + guest + guestNice
     }
@@ -68,7 +66,7 @@ public struct CPUInfoStat: Identifiable, Equatable {
     public var coreID: String = ""
     public var modelName: String = ""
     public var mhz: Double = 0.0
-    public var mhzMax: Double = 0.0
+    // public var mhzMax: Double = 0.0
     public var cacheSize: Int = 0
     public var flags: [String] = []
     public var microcode: String = ""
@@ -167,4 +165,13 @@ public struct DiskIOCountersStat: Identifiable, Equatable {
     public var ioTime: Int64 = 0
     public var weightedIO: Int64 = 0
     public var name: String = ""
+}
+
+public struct TemperatureStat: Identifiable, Equatable {
+    public let id = UUID()
+    public var name: String = ""
+    public var label: String = ""
+    public var temperature: Double = 0.0
+    public var sensorHigh: Double = 0.0
+    public var sensorCritical: Double = 0.0
 }

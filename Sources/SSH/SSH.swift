@@ -69,7 +69,7 @@ public class SSH: Lock {
     let lock = Lock()
     let waitGroup = WaitGroup()
 
-    let queue: DispatchQueue = .main
+    let queue: DispatchQueue = .init(label: "ssh.ssh2.app", qos: .userInteractive, attributes: .concurrent)
     var socketShell: DispatchSourceRead?
     var keepAliveSource: DispatchSourceTimer?
 

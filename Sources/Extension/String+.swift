@@ -41,6 +41,14 @@ public extension String {
         return (self as NSString).appendingPathComponent(str)
     }
 
+    var deletingLastPathComponent: String {
+        return (self as NSString).deletingLastPathComponent
+    }
+
+    var lastPathComponent: String {
+        return (self as NSString).lastPathComponent
+    }
+
     var fields: [String] {
         components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }
     }

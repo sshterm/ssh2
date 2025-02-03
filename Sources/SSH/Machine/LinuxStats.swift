@@ -35,8 +35,8 @@ public extension SSH {
         return fileinfo
     }
 
-    func readLines(_ filename: String) async -> [String]? {
-        guard let data: Data? = await exec("cat \(filename)") else {
+    func readLines(_ filename: String, find: Bool = false) async -> [String]? {
+        guard let data: Data? = await exec("\(find ? "find" : "cat") \(filename)") else {
             return nil
         }
         guard let text = data?.string?.trim,!text.isEmpty else {

@@ -1,6 +1,6 @@
 // Disk.swift
 // Copyright (c) 2025 ssh2.app
-// Created by admin@ssh2.app 2025/2/2.
+// Created by admin@ssh2.app 2025/2/3.
 
 import Foundation
 
@@ -33,8 +33,8 @@ public extension SSH {
             let weightedIO = (Int64(fields[13]) ?? 0)
 
             var io = DiskIOCountersStat()
-            io.readBytes = rbytes * 512
-            io.writeBytes = wbytes * 512
+            io.readBytes = rbytes * 0x200
+            io.writeBytes = wbytes * 0x200
             io.readCount = reads
             io.writeCount = writes
             io.mergedReadCount = mergedReads

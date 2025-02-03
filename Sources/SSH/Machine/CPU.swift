@@ -74,7 +74,7 @@ public extension SSH {
                 processorName = value
             case "processor", "cpu number":
                 if c.cpu >= 0 {
-                    await finishCPUInfo(&c)
+                    // await finishCPUInfo(&c)
                     ret.append(c)
                 }
                 c = CPUInfoStat()
@@ -286,24 +286,24 @@ public extension SSH {
             }
         }
         if c.cpu >= 0 {
-            await finishCPUInfo(&c)
+            // await finishCPUInfo(&c)
             ret.append(c)
         }
         return ret
     }
 
-    private func finishCPUInfo(_ c: inout CPUInfoStat) async {
-        if c.coreID.count == 0 {
-            if let lines = await readLines(sysCPUPath(c.cpu, "topology/core_id")),!lines.isEmpty {
-                c.coreID = lines[0]
-            }
-        }
-        if let lines = await readLines(sysCPUPath(c.cpu, "cpufreq/cpuinfo_max_freq")),!lines.isEmpty, let value = Double(lines[0]) {
-            c.mhzMax = value / 1000.0
-        }
-    }
-
-    private func sysCPUPath(_ cpu: Int, _ relPath: String) -> String {
-        hostSys.appendingPathComponent(String(format: "devices/system/cpu/cpu%d", cpu)).appendingPathComponent(relPath)
-    }
+//    private func finishCPUInfo(_ c: inout CPUInfoStat) async {
+//        if c.coreID.count == 0 {
+//            if let lines = await readLines(sysCPUPath(c.cpu, "topology/core_id")),!lines.isEmpty {
+//                c.coreID = lines[0]
+//            }
+//        }
+//        if let lines = await readLines(sysCPUPath(c.cpu, "cpufreq/cpuinfo_max_freq")),!lines.isEmpty, let value = Double(lines[0]) {
+//            c.mhzMax = value / 1000.0
+//        }
+//    }
+//
+//    private func sysCPUPath(_ cpu: Int, _ relPath: String) -> String {
+//        hostSys.appendingPathComponent(String(format: "devices/system/cpu/cpu%d", cpu)).appendingPathComponent(relPath)
+//    }
 }
