@@ -6,24 +6,31 @@ import Extension
 import Foundation
 
 public extension SSH {
-    func getCPUTimesStat() async -> [CPUTimesStat] {
-        let ret1: [CPUTimesStat] = await findCPUTimesStat()
+    func getClocksPerSec() async -> Double {
+        guard let clkTck = await exec("getconf CLK_TCK")?.string?.trim,!clkTck.isEmpty, let sec = Double(clkTck), sec > 0 else {
+            return 0x64
+        }
+        return sec
+    }
+
+    func getCPUTimesStat(clkTck: Double = 0x64) async -> [CPUTimesStat] {
+        let ret1: [CPUTimesStat] = await findCPUTimesStat(clkTck: clkTck)
         sleep(1)
-        var ret2: [CPUTimesStat] = await findCPUTimesStat()
+        var ret2: [CPUTimesStat] = await findCPUTimesStat(clkTck: clkTck)
         let cout = ret2.count - 1
-        guard cout > 0 else{
+        guard cout > 0 else {
             return []
         }
-        for i in 0...cout {
-            guard let t1 = ret1.first(where: {$0.cpu == ret2[i].cpu})  else{
+        for i in 0 ... cout {
+            guard let t1 = ret1.first(where: { $0.cpu == ret2[i].cpu }) else {
                 continue
             }
-            ret2[i].percent = CPUTimesStat.calculateCPUBusy(t1: ret1[i], t2: ret2[i])
+            ret2[i].percent = CPUTimesStat.calculateCPUBusy(t1: t1, t2: ret2[i])
         }
         return ret2
     }
-    
-    func findCPUTimesStat() async -> [CPUTimesStat] {
+
+    func findCPUTimesStat(clkTck: Double = 0x64) async -> [CPUTimesStat] {
         guard let lines = await readLines(hostProc.appendingPathComponent("stat")) else {
             return []
         }
@@ -42,21 +49,21 @@ public extension SSH {
             var cpu = fields[0]
             var ct = CPUTimesStat()
             ct.cpu = cpu
-            ct.user = Double(fields[1]) ?? 0
-            ct.nice = Double(fields[2]) ?? 0
-            ct.system = Double(fields[3]) ?? 0
-            ct.idle = Double(fields[4]) ?? 0
-            ct.iowait = Double(fields[5]) ?? 0
-            ct.irq = Double(fields[6]) ?? 0
-            ct.softirq = Double(fields[7]) ?? 0
+            ct.user = (Double(fields[1]) ?? 0) / clkTck
+            ct.nice = (Double(fields[2]) ?? 0) / clkTck
+            ct.system = (Double(fields[3]) ?? 0) / clkTck
+            ct.idle = (Double(fields[4]) ?? 0) / clkTck
+            ct.iowait = (Double(fields[5]) ?? 0) / clkTck
+            ct.irq = (Double(fields[6]) ?? 0) / clkTck
+            ct.softirq = (Double(fields[7]) ?? 0) / clkTck
             if fields.count > 8 {
-                ct.steal = Double(fields[8]) ?? 0
+                ct.steal = (Double(fields[8]) ?? 0) / clkTck
             }
             if fields.count > 9 {
-                ct.guest = Double(fields[9]) ?? 0
+                ct.guest = (Double(fields[9]) ?? 0) / clkTck
             }
             if fields.count > 10 {
-                ct.guestNice = Double(fields[10]) ?? 0
+                ct.guestNice = (Double(fields[10]) ?? 0) / clkTck
             }
             ret.append(ct)
         }

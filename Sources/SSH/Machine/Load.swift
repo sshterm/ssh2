@@ -26,6 +26,7 @@ public extension SSH {
             return nil
         }
         var stat = SystemStat()
+        stat.clkTck = await getClocksPerSec()
         for line in lines {
             let fields = line.fields.filter { !$0.isEmpty }
             guard fields.count == 2 else {

@@ -54,7 +54,10 @@ public extension CPUTimesStat {
 }
 
 public struct CPUInfoStat: Identifiable, Equatable {
-    public let id = UUID()
+    public var id: Int {
+        cpu
+    }
+
     public var cpu: Int = -1
     public var vendorID: String = ""
     public var family: String = ""
@@ -69,7 +72,6 @@ public struct CPUInfoStat: Identifiable, Equatable {
     public var cacheSize: Int = 0
     public var flags: [String] = []
     public var microcode: String = ""
-    
 }
 
 public struct AvgStat: Identifiable, Equatable {
@@ -134,10 +136,14 @@ public struct SystemStat: Identifiable, Equatable {
     public var processes: Int64 = 0
     public var processesRunning: Int64 = 0
     public var processesBlocked: Int64 = 0
+    public var clkTck: Double = 0.0
 }
 
 public struct NetIOCountersStat: Identifiable, Equatable {
-    public let id = UUID()
+    public var id: String {
+        name
+    }
+
     public var name: String = ""
     public var bytesSent: Int64 = 0
     public var bytesRecv: Int64 = 0
@@ -152,7 +158,10 @@ public struct NetIOCountersStat: Identifiable, Equatable {
 }
 
 public struct DiskIOCountersStat: Identifiable, Equatable {
-    public let id = UUID()
+    public var id: String {
+        name
+    }
+
     public var readCount: Int64 = 0
     public var mergedReadCount: Int64 = 0
     public var writeCount: Int64 = 0
@@ -177,9 +186,10 @@ public struct TemperatureStat: Identifiable, Equatable {
 }
 
 public struct SystemProcess: Identifiable, Equatable {
-    public var id: Int{
+    public var id: Int {
         pid
     }
+
     public var pid: Int = 0
     public var name: String = ""
     public var status: ProcessStatus = .UnknownState
@@ -189,9 +199,10 @@ public struct SystemProcess: Identifiable, Equatable {
     public var childrenSystem: Double = 0.0
     public var iowait: Double = 0.0
     public var cpuNum: Int = 0
+    public var createTime: Double = 0
     public var percent: Double = 0.0
-    
-    public static func calculatePercent(t1: SystemProcess,t2 :SystemProcess,delta: Double) -> Double{
+
+    public static func calculatePercent(t1: SystemProcess, t2: SystemProcess, delta: Double) -> Double {
         let delta_proc = (t2.user - t1.user) + (t2.system - t1.system)
         return ((delta_proc / delta) * 100) * Double(t1.cpuNum)
     }
@@ -204,7 +215,7 @@ public struct HostPlatform: Identifiable, Equatable {
 }
 
 public enum ProcessStatus: String, CaseIterable {
-    case All,Daemon, Blocked, Detached, Idle, Lock, Orphan, Running, Sleep, Stop, Wait, System, Zombie,UnknownState
+    case Daemon, Blocked, Detached, Idle, Lock, Orphan, Running, Sleep, Stop, Wait, System, Zombie, UnknownState
 
     public init(rawValue: String) {
         switch rawValue {

@@ -10,18 +10,19 @@ public extension SSH {
         sleep(1)
         var ret2: [DiskIOCountersStat] = await findDiskIOCountersStat()
         let cout = ret2.count - 1
-        guard cout > 0 else{
+        guard cout > 0 else {
             return []
         }
-        for i in 0...cout {
-            guard let t1 = ret1.first(where: {$0.name == ret2[i].name})  else{
+        for i in 0 ... cout {
+            guard let t1 = ret1.first(where: { $0.name == ret2[i].name }) else {
                 continue
             }
-            ret2[i].readBytes = ret2[i].readBytes - ret1[i].readBytes
-            ret2[i].writeBytes = ret2[i].writeBytes - ret1[i].writeBytes
+            ret2[i].readBytes = ret2[i].readBytes - t1.readBytes
+            ret2[i].writeBytes = ret2[i].writeBytes - t1.writeBytes
         }
         return ret2
     }
+
     func findDiskIOCountersStat() async -> [DiskIOCountersStat] {
         guard let lines = await readLines(hostProc.appendingPathComponent("diskstats")) else {
             return []
