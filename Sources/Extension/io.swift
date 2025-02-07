@@ -45,8 +45,11 @@ public class io {
         var nread, rc: Int
         while r.hasBytesAvailable && w.hasSpaceAvailable {
             nread = r.read(buffer.buffer, maxLength: buffer.count)
-            guard nread >= 0 else {
-                return nread
+            guard nread > 0 else {
+                if nread < 0 {
+                    return nread
+                }
+                return total
             }
             while nread > 0 && w.hasSpaceAvailable {
                 rc = w.write(buffer.buffer, maxLength: nread)

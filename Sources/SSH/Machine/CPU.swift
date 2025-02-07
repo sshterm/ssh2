@@ -16,7 +16,7 @@ public extension SSH {
                 continue
             }
             let fields = line.fields
-            if fields.count < 8 {
+            guard fields.count > 7 else {
                 continue
             }
             guard fields[0].hasPrefix("cpu") else {
@@ -33,26 +33,33 @@ public extension SSH {
             ct.irq = Double(fields[6]) ?? 0
             ct.softirq = Double(fields[7]) ?? 0
             if fields.count > 8 {
-                let steal = Double(fields[8]) ?? 0
-                if steal > 0.0 {
-                    ct.steal = steal / 100.0
-                }
+                ct.steal = Double(fields[8]) ?? 0
             }
             if fields.count > 9 {
-                let guest = Double(fields[9]) ?? 0
-                if guest > 0.0 {
-                    ct.guest = guest / 100.0
-                }
+                ct.guest = Double(fields[9]) ?? 0
             }
             if fields.count > 10 {
-                let guestNice = Double(fields[10]) ?? 0
-                if guestNice > 0.0 {
-                    ct.guestNice = guestNice / 100.0
-                }
+                ct.guestNice = Double(fields[10]) ?? 0
             }
             ret.append(ct)
         }
         return ret
+    }
+
+    func getCPUCount() async -> Int {
+        guard let lines = await readLines(hostProc.appendingPathComponent("cpuinfo")) else {
+            return 0
+        }
+        var count = 0
+
+        for line in lines {
+            guard line.hasPrefix("processor") else {
+                continue
+            }
+            count += 1
+        }
+
+        return count
     }
 
     func getCPUInfoStat() async -> [CPUInfoStat]? {
@@ -298,8 +305,9 @@ public extension SSH {
 //                c.coreID = lines[0]
 //            }
 //        }
-//        if let lines = await readLines(sysCPUPath(c.cpu, "cpufreq/cpuinfo_max_freq")),!lines.isEmpty, let value = Double(lines[0]) {
-//            c.mhzMax = value / 1000.0
+//        if let lines = await readLines(String(format: "%@ %@", sysCPUPath(c.cpu, "cpufreq/cpuinfo_max_freq"), sysCPUPath(c.cpu, "cpufreq/cpuinfo_min_freq"))), lines.count == 2, let max = Double(lines[0]), let min = Double(lines[1]) {
+//            c.mhzMax = max / 1000.0
+//            c.mhzMin = min / 1000.0
 //        }
 //    }
 //

@@ -31,7 +31,6 @@ public extension SSH {
             return nil
         }
         libssh2_channel_free(handle)
-
         return fileinfo
     }
 
@@ -65,6 +64,10 @@ public extension SSH {
 
     var hostSys: String {
         return "/sys"
+    }
+
+    var hostDev: String {
+        return "/dev"
     }
 
     var hostClass: String {

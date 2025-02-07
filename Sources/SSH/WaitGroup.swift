@@ -13,7 +13,7 @@ public class WaitGroup {
     private let condition = NSCondition()
 
     /// A lock to protect access to the count variable.
-    private let lock = Lock()
+    private let lock = NSLock()
 
     /// Initializes the WaitGroup.
     public init() {}
@@ -24,14 +24,14 @@ public extension WaitGroup {
     ///
     /// - Parameter delta: The amount to increment the count by.
     func add(_ delta: Int = 1) {
-        lock.with {
+        lock.withLock {
             count += delta
         }
     }
 
     /// Decrements the count by 1 and signals the condition if count reaches 0.
     func done() {
-        lock.with {
+        lock.withLock {
             count -= 1
         }
         if count <= 0 {

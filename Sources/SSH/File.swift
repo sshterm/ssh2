@@ -5,7 +5,12 @@
 import CSSH
 import Foundation
 
-public struct FileStat {
+public struct FileStat: Identifiable, Equatable {
+    public static func == (lhs: FileStat, rhs: FileStat) -> Bool {
+        lhs.id == rhs.id
+    }
+
+    public let id = UUID()
     // File type
     public let fileType: FileType
 
@@ -45,8 +50,13 @@ public struct FileStat {
     }
 }
 
-public struct FileAttributes: Identifiable {
+public struct FileAttributes: Identifiable, Equatable {
+    public static func == (lhs: FileAttributes, rhs: FileAttributes) -> Bool {
+        lhs.id == rhs.id
+    }
+
     public let id = UUID()
+
     // File name
     public let name: String
     // Long file name, may contain user and group information
@@ -275,7 +285,8 @@ public struct FilePermissions: RawRepresentable {
     public static let `default` = FilePermissions(owner: [.read, .write], group: [.read], others: [.read])
 }
 
-public struct Statvfs {
+public struct Statvfs: Identifiable, Equatable {
+    public let id = UUID()
     // File system block size
     public let bsize: UInt64
     // System allocated block size
@@ -316,6 +327,14 @@ public struct Statvfs {
         flag = statvfs.f_flag
         namemax = statvfs.f_namemax
     }
+
+    public var totalSpace: UInt64 {
+        frsize * blocks
+    }
+
+    public var freeSpace: UInt64 {
+        frsize * bfree
+    }
 }
 
 public enum FileType: String, CaseIterable {
@@ -351,6 +370,27 @@ public enum FileType: String, CaseIterable {
             self = .socket
         default:
             self = .unknown
+        }
+    }
+
+    public var name: String {
+        switch self {
+        case .link:
+            "Link"
+        case .regularFile:
+            "Regular File"
+        case .directory:
+            "Directory"
+        case .characterSpecialFile:
+            "Character"
+        case .blockSpecialFile:
+            "Block"
+        case .fifo:
+            "FIFO"
+        case .socket:
+            "Socket"
+        case .unknown:
+            "Unknown"
         }
     }
 }

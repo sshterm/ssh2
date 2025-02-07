@@ -7,22 +7,25 @@ import Extension
 import Foundation
 
 public extension SSH {
-    /// Initiates an asynchronous shell session.
-    ///
-    /// This function attempts to start a shell session on the SSH channel. It first checks if the raw channel is available,
-    /// then processes the startup of the shell. If successful, it notifies the channel delegate that the connection is online.
-    ///
-    /// - Returns: A boolean value indicating whether the shell session was successfully started.
-    func shell() async -> Bool {
+    func shell(type: PtyType = .xterm, width: Int32 = LIBSSH2_TERM_WIDTH, height: Int32 = LIBSSH2_TERM_HEIGHT) async -> Bool {
         await call { [self] in
-            guard let rawChannel else {
+            rawChannel = newSession()
+            guard rawChannel != nil else {
+                return false
+            }
+            var code = callSSH2 {
+                libssh2_channel_request_pty_ex(rawChannel, type.name, type.name.count.load(), nil, 0, width, height, LIBSSH2_TERM_WIDTH_PX, LIBSSH2_TERM_HEIGHT_PX)
+            }
+            guard code == LIBSSH2_ERROR_NONE else {
+                closeShell()
                 return false
             }
             pollShell()
-            let code = callSSH2 {
+            code = callSSH2 {
                 libssh2_channel_process_startup(rawChannel, "shell", 5, nil, 0)
             }
             guard code == LIBSSH2_ERROR_NONE else {
+                closeShell()
                 return false
             }
             addOperation {
@@ -32,14 +35,6 @@ public extension SSH {
         }
     }
 
-    /// Requests to change the size of the pseudo-terminal (PTY) for the SSH channel.
-    ///
-    /// - Parameters:
-    ///   - width: The desired width of the PTY in characters.
-    ///   - height: The desired height of the PTY in characters.
-    /// - Returns: A boolean value indicating whether the request was successful.
-    /// - Note: This function is asynchronous and uses the `await` keyword to perform the request.
-    ///         It returns `false` if the `rawChannel` is `nil` or if the request fails.
     func requestPtySize(width: Int32, height: Int32) async -> Bool {
         await call { [self] in
             guard let rawChannel else {
@@ -55,25 +50,21 @@ public extension SSH {
         }
     }
 
-    /**
-     Requests a pseudo-terminal (PTY) for the SSH channel.
+    func suspendPoll() {
+        socketShell?.suspend()
+    }
 
-     - Parameters:
-       - type: The type of PTY to request. Defaults to `.xterm`.
-       - width: The width of the terminal in characters. Defaults to `LIBSSH2_TERM_WIDTH`.
-       - height: The height of the terminal in characters. Defaults to `LIBSSH2_TERM_HEIGHT`.
+    func resumePoll() {
+        socketShell?.resume()
+    }
 
-     - Returns: A boolean value indicating whether the PTY request was successful.
-
-     This function asynchronously requests a PTY for the SSH channel using the specified type, width, and height. It returns `true` if the request was successful, and `false` otherwise.
-     */
-    func requestPty(type: PtyType = .xterm, width: Int32 = LIBSSH2_TERM_WIDTH, height: Int32 = LIBSSH2_TERM_HEIGHT) async -> Bool {
-        await call { [self] in
-            guard let rawChannel else {
-                return false
-            }
+    func setEnv(name: String, value: String) async -> Bool {
+        guard let rawChannel else {
+            return false
+        }
+        return await call { [self] in
             let code = callSSH2 {
-                libssh2_channel_request_pty_ex(rawChannel, type.name, type.name.count.load(), nil, 0, width, height, LIBSSH2_TERM_WIDTH_PX, LIBSSH2_TERM_HEIGHT_PX)
+                libssh2_channel_setenv_ex(rawChannel, name, name.count.load(), value, value.count.load())
             }
             guard code == LIBSSH2_ERROR_NONE else {
                 return false
@@ -82,34 +73,37 @@ public extension SSH {
         }
     }
 
-    /// Suspends the polling of the socket source.
-    ///
-    /// This method suspends the dispatch source associated with the socket,
-    /// effectively pausing any polling or event handling that was being performed.
-    /// Use this method when you need to temporarily stop processing events from the socket.
-    func suspendPoll() {
-        socketShell?.suspend()
+    func write(data: Data, stderr: Bool = false) async -> Bool {
+        guard let rawChannel else {
+            return false
+        }
+        return await call { [self] in
+            let code = callSSH2 {
+                libssh2_channel_write_ex(rawChannel, stderr ? SSH_EXTENDED_DATA_STDERR : 0, data.bytes, data.count)
+            }
+            guard code > 0 else {
+                return false
+            }
+            return true
+        }
     }
 
-    /// Resumes the polling of the socket source if it is currently suspended.
-    /// This function checks if the `socketShell` is not nil and calls the `resume()`
-    /// method on it to continue the polling process.
-    func resumePoll() {
-        socketShell?.resume()
+    func read(_ output: OutputStream, err: Bool = false, wait: Bool) -> Int {
+        let rc = io.Copy(output, ChannelInputStream(rawChannel: rawChannel, ssh: self, err: err, wait: wait), bufferSize)
+        return rc
     }
 
-    /// Polls the SSH channel for incoming data and handles it accordingly.
-    ///
-    /// This function sets up a non-blocking read source on the socket file descriptor
-    /// and assigns event and cancel handlers to it. The event handler reads data from
-    /// the SSH channel and processes it using the provided callbacks. If an error occurs
-    /// or the read operation is complete, the shell is canceled. The cancel handler
-    /// notifies the delegate that the connection is offline and sends an EOF signal.
-    ///
+    func read(_ stdout: OutputStream, _ stderr: OutputStream) -> (Int, Int) {
+        var rc, erc: Int
+        rc = read(stdout, wait: false)
+        erc = read(stderr, err: true, wait: false)
+        return (rc, erc)
+    }
+
     func pollShell() {
-        channelBlocking(false)
+        libssh2_channel_set_blocking(rawChannel, 0)
         cancelShell()
-        socketShell = DispatchSource.makeReadSource(fileDescriptor: socket.fd, queue: queue)
+        socketShell = DispatchSource.makeReadSource(fileDescriptor: socket.fd, queue: queueSocket)
         socketShell?.setEventHandler { [self] in
             let (rc, erc) = read(PipeOutputStream { data in
                 onData(data, true)
@@ -135,6 +129,54 @@ public extension SSH {
         socketShell?.resume()
     }
 
+    var isRead: Bool {
+        !(receivedEOF || receivedExit) && isConnected
+    }
+
+    var receivedExit: Bool {
+        guard let rawChannel else {
+            return true
+        }
+        return libssh2_channel_get_exit_status(rawChannel) != 0
+    }
+
+    var isPoll: Bool {
+        guard let rawChannel = rawChannel else {
+            return false
+        }
+        return libssh2_poll_channel_read(rawChannel, 0) != 0
+    }
+
+    var isPollError: Bool {
+        guard let rawChannel = rawChannel else {
+            return false
+        }
+        return libssh2_poll_channel_read(rawChannel, SSH_EXTENDED_DATA_STDERR) != 0
+    }
+
+    var receivedEOF: Bool {
+        guard let rawChannel else {
+            return true
+        }
+        return libssh2_channel_eof(rawChannel) != 0
+    }
+
+    func sendEOF() -> Bool {
+        guard !receivedEOF else {
+            return true
+        }
+        guard let rawChannel else {
+            return false
+        }
+        let code = callSSH2 {
+            libssh2_channel_send_eof(rawChannel)
+        }
+        guard code == LIBSSH2_ERROR_NONE else {
+            return false
+        }
+        return true
+    }
+
     /// Cancels the current shell session by canceling the associated socket source and setting it to nil.
     func cancelShell() {
         socketShell?.cancel()
@@ -149,5 +191,6 @@ public extension SSH {
     func closeShell() {
         cancelShell()
         sendEOF()
+        close(channel: rawChannel)
     }
 }

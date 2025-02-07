@@ -3,6 +3,7 @@
 // Created by admin@ssh2.app 2025/1/19.
 
 import CSSH
+import Darwin
 import Extension
 import Foundation
 
@@ -52,6 +53,45 @@ public extension Crypto {
             let mdctx = wolfSSL_EVP_MD_CTX_new()
             wolfSSL_EVP_DigestInit(mdctx, evp)
             wolfSSL_EVP_DigestUpdate(mdctx, message, message_len)
+            wolfSSL_EVP_DigestFinal_ex(mdctx, buf.buf.buffer, buf.len.buffer)
+            wolfSSL_EVP_MD_CTX_free(mdctx)
+        #endif
+        return buf.data
+    }
+
+    func sha(file: String, algorithm: ShaAlgorithm) -> Data? {
+        guard let fp = Darwin.fopen(file, "rb") else {
+            return nil
+        }
+        defer {
+            Darwin.fclose(fp)
+        }
+        let evp = algorithm.EVP
+        let buf: BufferData<Int8, UInt32> = .init(algorithm.digest)
+        let buff: Buffer<CChar> = .init(0x400)
+        var len: Int
+        #if HAVE_OPENSSL
+            let mdctx = EVP_MD_CTX_new()
+            EVP_DigestInit(mdctx, evp)
+        #else
+            let mdctx = wolfSSL_EVP_MD_CTX_new()
+            wolfSSL_EVP_DigestInit(mdctx, evp)
+        #endif
+        while true {
+            len = Darwin.fread(buff.buffer, 1, buff.count, fp)
+            guard len > 0 else {
+                break
+            }
+            #if HAVE_OPENSSL
+                EVP_DigestUpdate(mdctx, buff.buffer, len)
+            #else
+                wolfSSL_EVP_DigestUpdate(mdctx, buff.buffer, len)
+            #endif
+        }
+        #if HAVE_OPENSSL
+            EVP_DigestFinal_ex(mdctx, buf.buf.buffer, buf.len.buffer)
+            EVP_MD_CTX_free(mdctx)
+        #else
             wolfSSL_EVP_DigestFinal_ex(mdctx, buf.buf.buffer, buf.len.buffer)
             wolfSSL_EVP_MD_CTX_free(mdctx)
         #endif

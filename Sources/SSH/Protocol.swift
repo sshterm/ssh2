@@ -6,11 +6,8 @@ import Foundation
 
 /// A protocol that defines the delegate methods for handling SSH session events.
 public protocol SessionDelegate {
-    /// Disconnects the SSH session with an optional message.
-    /// - Parameters:
-    ///   - ssh: The SSH session to be disconnected.
-    ///   - message: An optional data message to be sent before disconnecting.
-    func disconnect(ssh: SSH, message: Data)
+    /// Disconnects
+    func disconnect()
 
     /// Performs the SSH handshake to establish a connection with the SSH server.
     ///
@@ -37,13 +34,13 @@ public protocol SessionDelegate {
     /// - Parameters:
     ///   - ssh: The SSH session instance.
     ///   - size: The size of the data to be sent.
-    func send(ssh: SSH, size: Int)
+    func send(ssh: SSH, size: Int64)
 
     /// Called to receive data over the SSH session.
     /// - Parameters:
     ///   - ssh: The SSH session instance.
     ///   - size: The size of the data to be received.
-    func recv(ssh: SSH, size: Int)
+    func recv(ssh: SSH, size: Int64)
 
     /// Called to log debug messages.
     /// - Parameters:

@@ -1,6 +1,6 @@
 // Load.swift
 // Copyright (c) 2025 ssh2.app
-// Created by admin@ssh2.app 2025/2/2.
+// Created by admin@ssh2.app 2025/2/3.
 
 import Extension
 import Foundation
@@ -26,6 +26,7 @@ public extension SSH {
             return nil
         }
         var stat = SystemStat()
+        stat.processCount = await getProcessCount()
         for line in lines {
             let fields = line.fields.filter { !$0.isEmpty }
             guard fields.count == 2 else {
@@ -39,11 +40,11 @@ public extension SSH {
             case "ctxt":
                 stat.context = Int(value) ?? 0
             case "processes":
-                stat.processes = Int(value) ?? 0
+                stat.processes = Int64(value) ?? 0
             case "procs_running":
-                stat.processesRunning = Int(value) ?? 0
+                stat.processesRunning = Int64(value) ?? 0
             case "procs_blocked":
-                stat.processesBlocked = Int(value) ?? 0
+                stat.processesBlocked = Int64(value) ?? 0
             default:
                 break
             }

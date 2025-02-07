@@ -64,7 +64,7 @@ public extension SSH {
             guard rc > 0 else {
                 return nil
             }
-            return buf.data(rc.load()).string
+            return buf.data(Int(rc)).string
         }
     }
 
@@ -89,7 +89,7 @@ public extension SSH {
             guard rc > 0 else {
                 return nil
             }
-            return buf.data(rc.load()).string
+            return buf.data(Int(rc)).string
         }
     }
 
@@ -367,16 +367,16 @@ public extension SSH {
             }
             var data: [FileAttributes] = []
             var rc: Int32
-            var buffer = [UInt8](repeating: 0, count: 0x200)
-            var longEntry = [UInt8](repeating: 0, count: 0x400)
+            let buffer: Buffer<UInt8> = .init(0x200)
+            let longEntry: Buffer<UInt8> = .init(0x400)
             var attrs = LIBSSH2_SFTP_ATTRIBUTES()
             repeat {
                 rc = callSSH2 {
-                    libssh2_sftp_readdir_ex(handle, &buffer, buffer.count, &longEntry, longEntry.count, &attrs)
+                    libssh2_sftp_readdir_ex(handle, buffer.buffer, buffer.count, longEntry.buffer, longEntry.count, &attrs)
                 }
                 if rc > 0 {
-                    let name = String(cString: buffer)
-                    let longname = String(cString: longEntry)
+                    let name = String(cString: buffer.buffer)
+                    let longname = String(cString: longEntry.buffer)
                     guard !ignoredfiles.contains(name) else {
                         continue
                     }
@@ -521,11 +521,11 @@ public extension SSH {
      If `rawSFTP` is `nil`, this method does nothing.
      */
     func freeSFTP() {
-        if let rawSFTP {
-            callSSH2 {
+        lock.withLock {
+            if let rawSFTP {
                 libssh2_sftp_shutdown(rawSFTP)
+                self.rawSFTP = nil
             }
-            self.rawSFTP = nil
         }
     }
 }

@@ -28,8 +28,11 @@ public struct CPUTimesStat: Identifiable, Equatable {
 
 public extension CPUTimesStat {
     static func calculateCPUBusy(t1: CPUTimesStat, t2: CPUTimesStat) -> Double {
-        let (t1All, t1Busy) = getAllBusy(t1)
-        let (t2All, t2Busy) = getAllBusy(t2)
+        var t1All, t1Busy, t2All, t2Busy: Double
+        t1All = t1.total
+        t2All = t2.total
+        t1Busy = t1.busy
+        t2Busy = t2.busy
         if t2Busy <= t1Busy {
             return 0
         }
@@ -40,14 +43,8 @@ public extension CPUTimesStat {
         return min(1, max(0, cpuUsage))
     }
 
-    static func getAllBusy(_ t: CPUTimesStat) -> (Double, Double) {
-        var tot = t.total
-        tot -= t.guest // Linux 2.6.24+
-        tot -= t.guestNice // Linux 3.2.0+
-
-        let busy = tot - t.idle - t.iowait
-
-        return (tot, busy)
+    var busy: Double {
+        total - idle - iowait
     }
 
     var total: Double {
@@ -66,7 +63,8 @@ public struct CPUInfoStat: Identifiable, Equatable {
     public var coreID: String = ""
     public var modelName: String = ""
     public var mhz: Double = 0.0
-    // public var mhzMax: Double = 0.0
+//    public var mhzMax: Double = 0.0
+//    public var mhzMin: Double = 0.0
     public var cacheSize: Int = 0
     public var flags: [String] = []
     public var microcode: String = ""
@@ -131,9 +129,10 @@ public struct SystemStat: Identifiable, Equatable {
     public let id = UUID()
     public var context: Int = 0
     public var bootTime: Int = 0
-    public var processes: Int = 0
-    public var processesRunning: Int = 0
-    public var processesBlocked: Int = 0
+    public var processes: Int64 = 0
+    public var processesRunning: Int64 = 0
+    public var processesBlocked: Int64 = 0
+    public var processCount: Int = 0
 }
 
 public struct NetIOCountersStat: Identifiable, Equatable {
@@ -174,4 +173,18 @@ public struct TemperatureStat: Identifiable, Equatable {
     public var temperature: Double = 0.0
     public var sensorHigh: Double = 0.0
     public var sensorCritical: Double = 0.0
+}
+
+public struct Process: Identifiable, Equatable {
+    public let id = UUID()
+    public var pid: Int = 0
+    public var name: String = ""
+    public var status: String = ""
+    public var lastCPUTimes: CPUTimesStat?
+}
+
+public struct HostPlatform: Identifiable, Equatable {
+    public let id = UUID()
+    public var platform: String = ""
+    public var version: String = ""
 }

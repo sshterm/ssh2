@@ -9,7 +9,7 @@ import Foundation
 import Proxy
 import Socket
 
-public class SSH: Lock {
+public class SSH {
     /// The current version of the SSH library.
     ///
     /// This constant holds the version number of the SSH library as a string.
@@ -66,10 +66,10 @@ public class SSH: Lock {
     /// The delegate responsible for handling channel-related events.
     public var channelDelegate: ChannelDelegate?
 
-    let lock = Lock()
-    let waitGroup = WaitGroup()
+    let lock = NSLock()
 
-    let queue: DispatchQueue = .init(label: "ssh.ssh2.app", qos: .userInteractive, attributes: .concurrent)
+    let queueSocket: DispatchQueue = .main
+    let queueKeep: DispatchQueue = .init(label: "ssh.ssh2.app", qos: .background, attributes: .concurrent)
     var socketShell: DispatchSourceRead?
     var keepAliveSource: DispatchSourceTimer?
 
@@ -83,6 +83,11 @@ public class SSH: Lock {
     /// - `rawChannel`: A pointer to the SSH channel.
     /// - `rawSFTP`: A pointer to the SFTP session.
     public internal(set) var rawSession, rawChannel, rawSFTP: OpaquePointer?
+
+    public internal(set) var send: Int64 = 0
+    public internal(set) var recv: Int64 = 0
+
+    var flowSource: DispatchSourceTimer?
 
     /// Initializes a new SSH connection with the specified parameters.
     ///

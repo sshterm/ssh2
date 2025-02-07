@@ -97,6 +97,7 @@ public extension SSH {
             // libssh2_session_flag(rawSession, LIBSSH2_FLAG_QUOTE_PATHS, 1)
             libssh2_session_set_timeout(rawSession, timeout * 1000)
             libssh2_session_banner_set(rawSession, clientbanner)
+            keepaliveFlow()
             let rec = callSSH2 {
                 libssh2_session_handshake(rawSession, socket.fd)
             }
@@ -116,6 +117,19 @@ public extension SSH {
         }
     }
 
+    func keepaliveFlow(_ keepaliveInterval: Int = 1) {
+        cancelFlowSource()
+        flowSource = DispatchSource.makeTimerSource(queue: queueKeep)
+        flowSource?.schedule(deadline: DispatchTime.now() + .seconds(keepaliveInterval), repeating: .seconds(keepaliveInterval), leeway: .seconds(keepaliveInterval))
+
+        flowSource?.setEventHandler { [self] in
+            self.sessionDelegate?.send(ssh: self, size: send)
+            self.sessionDelegate?.recv(ssh: self, size: recv)
+        }
+        flowSource?.setCancelHandler {}
+        flowSource?.resume()
+    }
+
     /// Starts a keepalive mechanism for the SSH session.
     ///
     /// This function configures the keepalive settings for the SSH session and sets up a timer
@@ -129,7 +143,7 @@ public extension SSH {
         }
         libssh2_keepalive_config(rawSession, 1, keepaliveInterval.load())
         cancelKeepalive()
-        keepAliveSource = DispatchSource.makeTimerSource(queue: queue)
+        keepAliveSource = DispatchSource.makeTimerSource(queue: queueKeep)
 
         guard let keepAliveSource else {
             return
@@ -155,6 +169,11 @@ public extension SSH {
     func cancelKeepalive() {
         keepAliveSource?.cancel()
         keepAliveSource = nil
+    }
+
+    func cancelFlowSource() {
+        flowSource?.cancel()
+        flowSource = nil
     }
 
     /// Suspends the keep-alive mechanism for the SSH session.
@@ -355,16 +374,18 @@ public extension SSH {
     /// - Note: Ensure that no operations are being performed on the SSH connection before calling this method.
     func free() {
         job.cancelAllOperations()
-        waitGroup.with {
-            closeShell()
-        }
-        waitGroup.with {
-            freeChannel()
-        }
-        waitGroup.with {
-            freeSFTP()
-        }
+        closeShell()
+        freeSFTP()
         freeSession()
+    }
+
+    func closed(session: OpaquePointer?) {
+        lock.withLock {
+            if session != nil {
+                libssh2_session_disconnect_ex(session, SSH_DISCONNECT_BY_APPLICATION, "Bye-Bye", "")
+                libssh2_session_free(session)
+            }
+        }
     }
 
     /// Frees the current SSH session.
@@ -374,14 +395,9 @@ public extension SSH {
     /// sets `rawSession` to `nil`.
     func freeSession() {
         cancelKeepalive()
-        if let rawSession {
-            waitGroup.wait()
-            if isConnected {
-                libssh2_session_disconnect_ex(rawSession, SSH_DISCONNECT_BY_APPLICATION, "Bye-Bye", "")
-            }
-            libssh2_session_free(rawSession)
-            self.rawSession = nil
-        }
+        closed(session: rawSession)
+        cancelFlowSource()
+        rawSession = nil
     }
 }
 

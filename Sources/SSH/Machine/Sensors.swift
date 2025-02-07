@@ -30,7 +30,7 @@ public extension SSH {
             for file in files {
                 let directory = file.deletingLastPathComponent
                 let basename = file.lastPathComponent.components(separatedBy: "_")[0]
-                guard let lines = await readLines(String(format: "%@ %@ %@", directory.appendingPathComponent("name"), file,directory.appendingPathComponent("\(basename)_crit"))) else {
+                guard let lines = await readLines(String(format: "%@ %@ %@", directory.appendingPathComponent("name"), file, directory.appendingPathComponent("\(basename)_crit"))) else {
                     continue
                 }
                 guard lines.count == 3 else {
@@ -38,8 +38,8 @@ public extension SSH {
                 }
                 let name = lines[0].lowercased()
                 let temperature = lines[1]
-                let crit =   lines[2]
-                let high =  await readFile(directory.appendingPathComponent("\(basename)_max"))?.lowercased() ?? ""
+                let crit = lines[2]
+                let high = await readFile(directory.appendingPathComponent("\(basename)_max"))?.lowercased() ?? ""
                 let label = await readFile(directory.appendingPathComponent("\(basename)_label"))?.lowercased() ?? ""
                 var t = TemperatureStat()
                 t.name = name

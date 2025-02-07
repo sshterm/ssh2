@@ -20,6 +20,13 @@ public extension String {
         trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    var trimQuotes: String {
+        if count >= 2, first == "\"" && last == "\"" {
+            return String(dropFirst().dropLast())
+        }
+        return self
+    }
+
     /// Splits the String into an array of substrings at each newline character.
     var lines: [String] {
         components(separatedBy: .newlines)
