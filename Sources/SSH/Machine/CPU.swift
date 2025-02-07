@@ -6,9 +6,26 @@ import Extension
 import Foundation
 
 public extension SSH {
-    func getCPUTimesStat() async -> [CPUTimesStat]? {
+    func getCPUTimesStat() async -> [CPUTimesStat] {
+        let ret1: [CPUTimesStat] = await findCPUTimesStat()
+        sleep(1)
+        var ret2: [CPUTimesStat] = await findCPUTimesStat()
+        let cout = ret2.count - 1
+        guard cout > 0 else{
+            return []
+        }
+        for i in 0...cout {
+            guard let t1 = ret1.first(where: {$0.cpu == ret2[i].cpu})  else{
+                continue
+            }
+            ret2[i].percent = CPUTimesStat.calculateCPUBusy(t1: ret1[i], t2: ret2[i])
+        }
+        return ret2
+    }
+    
+    func findCPUTimesStat() async -> [CPUTimesStat] {
         guard let lines = await readLines(hostProc.appendingPathComponent("stat")) else {
-            return nil
+            return []
         }
         var ret: [CPUTimesStat] = []
         for line in lines {

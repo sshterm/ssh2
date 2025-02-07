@@ -5,12 +5,29 @@
 import Foundation
 
 public extension SSH {
-    func getNetIOCountersStat() async -> [NetIOCountersStat]? {
+    func getNetIOCountersStat() async -> [NetIOCountersStat] {
+        let ret1: [NetIOCountersStat] = await findNetIOCountersStat()
+        sleep(1)
+        var ret2: [NetIOCountersStat] = await findNetIOCountersStat()
+        let cout = ret2.count - 1
+        guard cout > 0 else{
+            return []
+        }
+        for i in 0...cout {
+            guard let t1 = ret1.first(where: {$0.name == ret2[i].name})  else{
+                continue
+            }
+            ret2[i].bytesRecv = ret2[i].bytesRecv - ret1[i].bytesRecv
+            ret2[i].bytesSent = ret2[i].bytesSent - ret1[i].bytesSent
+        }
+        return ret2
+    }
+    func findNetIOCountersStat() async -> [NetIOCountersStat] {
         guard let lines = await readLines(hostProc.appendingPathComponent("net/dev")) else {
-            return nil
+            return []
         }
         guard lines.count > 1 else {
-            return nil
+            return []
         }
         var ret: [NetIOCountersStat] = []
         for line in lines[0...] {

@@ -213,7 +213,7 @@ public extension SSH {
             resumeKeepalive()
         }
         guard let rawSession else {
-            resumeKeepalive()
+            cancelKeepalive()
             return
         }
         let seconds: Buffer<Int32> = .init()
@@ -223,7 +223,7 @@ public extension SSH {
         #endif
         guard rc == LIBSSH2_ERROR_NONE else {
             if rc == LIBSSH2_ERROR_SOCKET_SEND {
-                resumeKeepalive()
+                cancelKeepalive()
             }
             return
         }

@@ -24,6 +24,7 @@ public struct CPUTimesStat: Identifiable, Equatable {
     public var steal: Double = 0.0
     public var guest: Double = 0.0
     public var guestNice: Double = 0.0
+    public var percent: Double = 0.0
 }
 
 public extension CPUTimesStat {
@@ -68,6 +69,7 @@ public struct CPUInfoStat: Identifiable, Equatable {
     public var cacheSize: Int = 0
     public var flags: [String] = []
     public var microcode: String = ""
+    
 }
 
 public struct AvgStat: Identifiable, Equatable {
@@ -132,7 +134,6 @@ public struct SystemStat: Identifiable, Equatable {
     public var processes: Int64 = 0
     public var processesRunning: Int64 = 0
     public var processesBlocked: Int64 = 0
-    public var processCount: Int = 0
 }
 
 public struct NetIOCountersStat: Identifiable, Equatable {
@@ -175,16 +176,64 @@ public struct TemperatureStat: Identifiable, Equatable {
     public var sensorCritical: Double = 0.0
 }
 
-public struct Process: Identifiable, Equatable {
-    public let id = UUID()
+public struct SystemProcess: Identifiable, Equatable {
+    public var id: Int{
+        pid
+    }
     public var pid: Int = 0
     public var name: String = ""
-    public var status: String = ""
-    public var lastCPUTimes: CPUTimesStat?
+    public var status: ProcessStatus = .UnknownState
+    public var user: Double = 0.0
+    public var system: Double = 0.0
+    public var childrenUser: Double = 0.0
+    public var childrenSystem: Double = 0.0
+    public var iowait: Double = 0.0
+    public var cpuNum: Int = 0
+    public var percent: Double = 0.0
+    
+    public static func calculatePercent(t1: SystemProcess,t2 :SystemProcess,delta: Double) -> Double{
+        let delta_proc = (t2.user - t1.user) + (t2.system - t1.system)
+        return ((delta_proc / delta) * 100) * Double(t1.cpuNum)
+    }
 }
 
 public struct HostPlatform: Identifiable, Equatable {
     public let id = UUID()
     public var platform: String = ""
     public var version: String = ""
+}
+
+public enum ProcessStatus: String, CaseIterable {
+    case All,Daemon, Blocked, Detached, Idle, Lock, Orphan, Running, Sleep, Stop, Wait, System, Zombie,UnknownState
+
+    public init(rawValue: String) {
+        switch rawValue {
+        case "A":
+            self = .Daemon
+        case "D", "U":
+            self = .Blocked
+        case "E":
+            self = .Detached
+        case "I":
+            self = .Idle
+        case "L":
+            self = .Lock
+        case "O":
+            self = .Orphan
+        case "R":
+            self = .Running
+        case "S":
+            self = .Sleep
+        case "T", "t":
+            self = .Stop
+        case "W":
+            self = .Wait
+        case "Y":
+            self = .System
+        case "Z":
+            self = .Zombie
+        default:
+            self = .UnknownState
+        }
+    }
 }
