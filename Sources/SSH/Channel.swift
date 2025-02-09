@@ -15,8 +15,13 @@ public extension SSH {
     }
 
     func closed(channel: OpaquePointer?) {
-        lock.withLock {
+        call { [self] in
             if channel != nil {
+                if libssh2_channel_eof(channel) != 0 {
+                    libssh2_channel_send_eof(channel)
+                    libssh2_channel_wait_eof(channel)
+                }
+
                 libssh2_channel_wait_closed(channel)
                 libssh2_channel_free(channel)
             }
@@ -33,23 +38,31 @@ public extension SSH {
         return true
     }
 
-    func exec(_ command: String, _ output: OutputStream) async -> Int {
+    func exec(_ command: String, _ output: OutputStream, _ stderr: OutputStream? = nil) async -> Int {
         await call { [self] in
             guard let rawChannel = newSession() else {
                 return -1
             }
             libssh2_channel_set_blocking(rawChannel, 1)
-            defer {
-                closed(channel: rawChannel)
-            }
+
             let code = callSSH2 {
                 libssh2_channel_process_startup(rawChannel, "exec", 4, command, command.count.load())
             }
             guard code == LIBSSH2_ERROR_NONE else {
+                closed(channel: rawChannel)
                 return -1
             }
-            return io.Copy(output, ChannelInputStream(rawChannel: rawChannel, ssh: self, wait: true), bufferSize)
+            if let stderr {
+                io.Copy(stderr, ChannelInputStream(rawChannel: rawChannel, ssh: self, err: true, wait: true), bufferSize)
+            }
+            let rc = io.Copy(output, ChannelInputStream(rawChannel: rawChannel, ssh: self, wait: true), bufferSize)
+            closed(channel: rawChannel)
+            return rc
         }
+    }
+
+    func exec(_ command: String, _ stdout: @escaping (Data) -> Bool, _ stderr: @escaping (Data) -> Bool) async -> Bool {
+        await exec(command, PipeOutputStream(callback: stdout), PipeOutputStream(callback: stderr)) >= 0
     }
 
     func exec(_ command: String, count: Int = 0) async -> Data? {

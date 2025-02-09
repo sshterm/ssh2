@@ -13,8 +13,16 @@ extension SSH {
     /// - Note: This function uses `withUnsafeContinuation` to bridge the synchronous callback execution with the asynchronous context.
     func call<T>(_ callback: @escaping () -> T) async -> T {
         await withUnsafeContinuation { continuation in
-            let ret = callback()
+            let ret = waitGroup.with {
+                callback()
+            }
             continuation.resume(returning: ret)
+        }
+    }
+
+    func call<T>(_ callback: @escaping () -> T) -> T {
+        waitGroup.with {
+            callback()
         }
     }
 
@@ -30,15 +38,20 @@ extension SSH {
     ///
     /// - Important: This function locks the SSH2 resource before executing the callback and unlocks it after the callback completes.
     func callSSH2<T>(_ wait: Bool = true, _ callback: @escaping () -> T) -> T where T: FixedWidthInteger {
-        var ret: T
-        repeat {
-            ret = lock.withLock {
-                callback()
+        waitGroup.with {
+            lock.withLock { var ret: T
+                repeat {
+                    guard !isFree else {
+                        ret = T(LIBSSH2_ERROR_ALLOC)
+                        break
+                    }
+                    ret = callback()
+                    guard wait, ret == T(LIBSSH2_ERROR_EAGAIN) else { break }
+                    guard waitsocket() > 0 else { break }
+                } while true
+                return ret
             }
-            guard wait, ret == LIBSSH2_ERROR_EAGAIN else { break }
-            guard waitsocket() > 0 else { break }
-        } while true
-        return ret
+        }
     }
 
     /// Executes a callback function within a locked SSH session, handling potential EAGAIN errors.
@@ -52,15 +65,16 @@ extension SSH {
     /// If `wait` is `true`, it will handle `LIBSSH2_ERROR_EAGAIN` errors by waiting for the session to be ready.
     /// The function will repeat the callback execution until it succeeds or an error other than `E
     func callSSH2<T>(_ wait: Bool = true, _ callback: @escaping () -> T) -> T {
-        var ret: T
-        repeat {
-            ret = lock.withLock {
-                callback()
+        waitGroup.with {
+            lock.withLock { var ret: T
+                repeat {
+                    ret = callback()
+                    guard wait, rawSession != nil, libssh2_session_last_errno(rawSession) == LIBSSH2_ERROR_EAGAIN else { break }
+                    guard waitsocket() > 0 else { break }
+                } while true
+                return ret
             }
-            guard wait, rawSession != nil, libssh2_session_last_errno(rawSession) == LIBSSH2_ERROR_EAGAIN else { break }
-            guard waitsocket() > 0 else { break }
-        } while true
-        return ret
+        }
     }
 
     /// Adds a new operation to the job queue.
@@ -90,11 +104,11 @@ extension SSH {
     ///   - message: A pointer to the C-style string message to be traced.
     ///   - messageLen: The length of the message in bytes.
     func trace(message: UnsafePointer<CChar>, messageLen: Int) {
-        guard let msg = Data(bytes: message, count: messageLen).string else {
+        guard SSH.traceFD != -2 else {
             return
         }
         addOperation {
-            self.sessionDelegate?.trace(ssh: self, message: msg)
+            Darwin.write(SSH.traceFD, message, messageLen)
         }
     }
 
@@ -110,11 +124,11 @@ extension SSH {
         - languageLen: An unused parameter representing the length of the language string.
      */
     func debug(sess _: UnsafeRawPointer, reason _: CInt, message: UnsafePointer<CChar>, messageLen: CInt, language _: UnsafePointer<CChar>, languageLen _: CInt) {
-        guard let msg = Data(bytes: message, count: Int(messageLen)).string else {
+        guard SSH.traceFD != -2 else {
             return
         }
         addOperation {
-            self.sessionDelegate?.debug(ssh: self, message: msg)
+            Darwin.write(SSH.traceFD, message, Int(messageLen))
         }
     }
 

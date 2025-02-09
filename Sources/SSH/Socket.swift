@@ -109,26 +109,33 @@ public extension SSH {
     ///   - `-1` if the session or socket file descriptor is invalid.
     ///   - The result of the `poll` call otherwise.
     func waitsocket() -> Int32 {
-        guard socket.fd != -1, rawSession != nil else {
-            return -1
+        call { [self] in
+            guard socket.fd != -1, rawSession != nil else {
+                return -1
+            }
+            var timeout = Darwin.timeval(tv_sec: self.timeout, tv_usec: 0)
+            var fdSet, readFd, writeFd: Darwin.fd_set
+            fdSet = Darwin.fd_set()
+            readFd = Darwin.fd_set()
+            writeFd = Darwin.fd_set()
+            fdSet.zero()
+            fdSet.set(socket.fd)
+            readFd.zero()
+            writeFd.zero()
+            let dir = libssh2_session_block_directions(rawSession)
+            if (dir & LIBSSH2_SESSION_BLOCK_INBOUND) != 0 {
+                readFd = fdSet
+            }
+            if (dir & LIBSSH2_SESSION_BLOCK_OUTBOUND) != 0 {
+                writeFd = fdSet
+            }
+            let rc = Darwin.select(socket.fd + 1, &readFd, &writeFd, nil, &timeout)
+
+            #if DEBUG
+                print("阻塞:\(rc) dir: \(dir)")
+            #endif
+            return rc
         }
-        let pollin = UInt(LIBSSH2_POLLFD_POLLIN)
-        let pollout = UInt(LIBSSH2_POLLFD_POLLOUT)
-        let dir = libssh2_session_block_directions(rawSession)
-        var fds = LIBSSH2_POLLFD()
-        fds.type = UInt8(LIBSSH2_POLLFD_SOCKET)
-        fds.fd.socket = socket.fd
-        if dir & LIBSSH2_SESSION_BLOCK_INBOUND != 0 {
-            fds.events |= pollin
-        }
-        if dir & LIBSSH2_SESSION_BLOCK_OUTBOUND != 0 {
-            fds.events |= pollout
-        }
-        let rc = libssh2_poll(&fds, 1, timeout)
-        #if DEBUG
-            print("阻塞", fds.revents, Date())
-        #endif
-        return rc
     }
 
     /// Closes the SSH connection by performing the following steps:

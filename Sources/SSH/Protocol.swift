@@ -46,13 +46,13 @@ public protocol SessionDelegate {
     /// - Parameters:
     ///   - ssh: The SSH session instance.
     ///   - message: The debug message.
-    func debug(ssh: SSH, message: String)
+    // func debug(ssh: SSH, message: String)
 
     /// Called to trace SSH session events.
     /// - Parameters:
     ///   - ssh: The SSH session instance.
     ///   - message: The trace message.
-    func trace(ssh: SSH, message: String)
+    // func trace(ssh: SSH, message: String)
 }
 
 /// A protocol that defines the delegate methods for handling SSH channel events.

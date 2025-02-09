@@ -29,7 +29,7 @@ public extension String {
 
     /// Splits the String into an array of substrings at each newline character.
     var lines: [String] {
-        components(separatedBy: .newlines).map{$0.trim}
+        components(separatedBy: .newlines).map { $0.trim }
     }
 
     /// Adds a specified prefix to the current string if it doesn't already have that prefix.
@@ -58,5 +58,17 @@ public extension String {
 
     var fields: [String] {
         components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }
+    }
+
+    subscript(bounds: CountableClosedRange<Int>) -> String {
+        let start = index(startIndex, offsetBy: bounds.lowerBound)
+        let end = index(startIndex, offsetBy: bounds.upperBound)
+        return String(self[start ... end])
+    }
+
+    subscript(bounds: CountableRange<Int>) -> String {
+        let start = index(startIndex, offsetBy: bounds.lowerBound)
+        let end = index(startIndex, offsetBy: bounds.upperBound)
+        return String(self[start ..< end])
     }
 }

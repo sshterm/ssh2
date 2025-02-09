@@ -463,9 +463,10 @@ public extension SSH {
     func upload(local: InputStream, remote: String, permissions: FilePermissions = .default, progress: @escaping (_ send: Int) -> Bool = { _ in true }) async -> Bool {
         await call { [self] in
             let remote = SFTPOutputStream(ssh: self, remotePath: remote, permissions: permissions)
-            guard io.Copy(local, remote, bufferSize, { send in
+            let rc = io.Copy(local, remote, bufferSize) { send in
                 progress(send)
-            }) >= 0 else {
+            }
+            guard rc >= 0 else {
                 return false
             }
             return true
@@ -483,9 +484,10 @@ public extension SSH {
     func download(remote: String, local: OutputStream, progress: @escaping (_ send: Int, _ size: Int) -> Bool = { _, _ in true }) async -> Bool {
         await call { [self] in
             let remote = SFTPInputStream(ssh: self, remotePath: remote)
-            guard io.Copy(remote, local, bufferSize, { send in
+            let rc = io.Copy(remote, local, bufferSize) { send in
                 progress(send, remote.size)
-            }) == remote.size else {
+            }
+            guard rc == remote.size else {
                 return false
             }
             return true
@@ -521,11 +523,11 @@ public extension SSH {
      If `rawSFTP` is `nil`, this method does nothing.
      */
     func freeSFTP() {
-        lock.withLock {
-            if let rawSFTP {
+        if let rawSFTP {
+            callSSH2 {
                 libssh2_sftp_shutdown(rawSFTP)
-                self.rawSFTP = nil
             }
+            self.rawSFTP = nil
         }
     }
 }

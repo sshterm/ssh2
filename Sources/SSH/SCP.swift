@@ -15,18 +15,26 @@ public extension SSH {
     ///   - permissions: The file permissions to be set on the remote file. Defaults to `.default`.
     ///   - progress: A closure that is called with the number of bytes sent. Returns a `Bool` indicating whether to continue sending.
     /// - Returns: A `Bool` indicating whether the file was successfully sent.
-    func send(local: String, remote: String, permissions: FilePermissions = .default, progress: @escaping (_ send: Int) -> Bool = { _ in true }) async -> Bool {
-        await call { [self] in
-            guard let stream = InputStream(fileAtPath: local) else {
-                return false
-            }
-            guard let size = getFileSize(filePath: local) else {
-                return false
-            }
+    func send(local: String, remote: String, permissions: FilePermissions = .default, sftp: Bool = false, progress: @escaping (_ send: Int) -> Bool = { _ in true }) async -> Bool {
+        if sftp {
+            await upload(local: local, remote: remote, permissions: permissions, progress: progress)
+        }
+        guard let stream = InputStream(fileAtPath: local) else {
+            return false
+        }
+        guard let size = getFileSize(filePath: local) else {
+            return false
+        }
+        return await send(local: stream, size: size, remote: remote, permissions: permissions, progress: progress)
+    }
+
+    func send(local: InputStream, size: Int64, remote: String, permissions: FilePermissions = .default, sftp: Bool = false, progress: @escaping (_ send: Int) -> Bool = { _ in true }) async -> Bool {
+        sftp ? await upload(local: local, remote: remote, permissions: permissions, progress: progress) : await call { [self] in
             let remote = SCPOutputStream(ssh: self, remotePath: remote, permissions: permissions, size: size)
-            guard io.Copy(stream, remote, bufferSize, { send in
+            let rc = io.Copy(local, remote, bufferSize) { send in
                 progress(send)
-            }) >= 0 else {
+            }
+            guard rc >= 0 else {
                 return false
             }
             return true
@@ -41,15 +49,21 @@ public extension SSH {
     ///   - progress: A closure that is called with the number of bytes sent and the total size of the file.
     ///               Returns `true` to continue the transfer, or `false` to cancel it.
     /// - Returns: A Boolean value indicating whether the file was successfully received.
-    func recv(remote: String, local: String, progress: @escaping (_ send: Int, _ size: Int) -> Bool = { _, _ in true }) async -> Bool {
-        await call { [self] in
-            guard let stream = OutputStream(toFileAtPath: local, append: false) else {
-                return false
-            }
+    func recv(remote: String, local: String, sftp: Bool = false, progress: @escaping (_ send: Int, _ size: Int) -> Bool = { _, _ in true }) async -> Bool {
+        guard let stream = OutputStream(toFileAtPath: local, append: false) else {
+            return false
+        }
+        return await recv(remote: remote, local: stream, sftp: sftp, progress: progress)
+    }
+
+    func recv(remote: String, local: OutputStream, sftp: Bool = false, progress: @escaping (_ send: Int, _ size: Int) -> Bool = { _, _ in true }) async -> Bool {
+        sftp ? await download(remote: remote, local: local, progress: progress) : await call { [self] in
+
             let remote = SCPInputStream(ssh: self, remotePath: remote)
-            guard io.Copy(remote, stream, bufferSize, { send in
+            let rc = io.Copy(remote, local, bufferSize) { send in
                 progress(send, remote.size)
-            }) == remote.size else {
+            }
+            guard rc == remote.size else {
                 return false
             }
             return true

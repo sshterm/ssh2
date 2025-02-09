@@ -27,7 +27,21 @@ public extension SSH {
         guard !platform.isEmpty,!version.isEmpty else {
             return nil
         }
-        return .init(platform: platform, version: version)
+        var dns: [String] = []
+        if let lines = await readLines(hostEtc.appendingPathComponent("resolv.conf")) {
+            for line in lines {
+                guard line.hasPrefix("nameserver") else {
+                    continue
+                }
+                let fields = line.fields
+                guard fields.count == 2 else {
+                    continue
+                }
+                dns.append(fields[1])
+            }
+        }
+
+        return .init(platform: platform, version: version, dns: dns)
     }
 
     func isLinux() async -> Bool {

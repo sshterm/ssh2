@@ -20,6 +20,8 @@ public class SSH {
     /// This value is defined by the `LIBSSH2_VERSION` macro.
     public static let libssh2_version = LIBSSH2_VERSION
 
+    static var traceFD: Int32 = -1
+
     /// The size of the buffer used for SSH operations.
     ///
     /// This property defines the size of the buffer in bytes. The default value is set to 0x4000 (16384 bytes).
@@ -67,6 +69,7 @@ public class SSH {
     public var channelDelegate: ChannelDelegate?
 
     let lock = NSLock()
+    let waitGroup = WaitGroup()
 
     let queueSocket: DispatchQueue = .main
     let queueKeep: DispatchQueue = .init(label: "ssh.ssh2.app", qos: .background, attributes: .concurrent)
@@ -86,6 +89,7 @@ public class SSH {
 
     public internal(set) var send: Int64 = 0
     public internal(set) var recv: Int64 = 0
+    public internal(set) var isFree: Bool = false
 
     var flowSource: DispatchSourceTimer?
 
@@ -103,6 +107,7 @@ public class SSH {
         self.user = user
         self.timeout = timeout
         self.compress = compress
+        libssh2_init(0)
     }
 
     public init(_ host: String) {
@@ -112,5 +117,10 @@ public class SSH {
         user = url?.user ?? "root"
         timeout = 5
         compress = true
+        libssh2_init(0)
+    }
+
+    deinit {
+        libssh2_exit()
     }
 }

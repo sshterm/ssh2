@@ -33,9 +33,9 @@ public extension WaitGroup {
     func done() {
         lock.withLock {
             count -= 1
-        }
-        if count <= 0 {
-            condition.signal()
+            if count <= 0 {
+                condition.signal()
+            }
         }
     }
 

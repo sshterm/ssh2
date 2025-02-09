@@ -40,7 +40,7 @@ class SFTPInputStream: InputStream {
         rawSFTP = ssh.callSSH2 { [self] in
             libssh2_sftp_init(ssh.rawSession)
         }
-        guard let rawSFTP else {
+        guard rawSFTP != nil else {
             return
         }
         var fileinfo = LIBSSH2_SFTP_ATTRIBUTES()
@@ -97,7 +97,7 @@ class SFTPOutputStream: OutputStream {
         rawSFTP = ssh.callSSH2 { [self] in
             libssh2_sftp_init(ssh.rawSession)
         }
-        guard let rawSFTP else {
+        guard rawSFTP != nil else {
             return
         }
         handle = ssh.callSSH2 { [self] in
@@ -154,6 +154,7 @@ class SCPInputStream: InputStream {
             return
         }
         var fileinfo = libssh2_struct_stat()
+        libssh2_session_set_blocking(ssh.rawSession, 1)
         handle = ssh.callSSH2 { [self] in
             libssh2_scp_recv2(ssh.rawSession, remotePath, &fileinfo)
         }
@@ -164,6 +165,8 @@ class SCPInputStream: InputStream {
     override func close() {
         if let handle {
             libssh2_channel_send_eof(handle)
+            libssh2_channel_wait_eof(handle)
+            libssh2_channel_wait_closed(handle)
             libssh2_channel_free(handle)
         }
     }
@@ -201,6 +204,7 @@ class SCPOutputStream: OutputStream {
         guard ssh.rawSession != nil else {
             return
         }
+        libssh2_session_set_blocking(ssh.rawSession, 1)
         handle = ssh.callSSH2 { [self] in
             libssh2_scp_send64(ssh.rawSession, remotePath, permissions.rawValue, size, 0, 0)
         }
@@ -209,6 +213,8 @@ class SCPOutputStream: OutputStream {
     override func close() {
         if let handle {
             libssh2_channel_send_eof(handle)
+            libssh2_channel_wait_eof(handle)
+            libssh2_channel_wait_closed(handle)
             libssh2_channel_free(handle)
         }
     }

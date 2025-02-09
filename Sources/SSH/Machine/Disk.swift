@@ -36,8 +36,12 @@ public extension SSH {
             if fields.count < 14 {
                 continue
             }
-
             let name = fields[2]
+
+            if name.hasPrefix("loop") || name.hasPrefix("ram") || name.hasPrefix("fd") {
+                continue
+            }
+
             let reads = (Int64(fields[3]) ?? 0)
             let mergedReads = (Int64(fields[4]) ?? 0)
             let rbytes = (Int64(fields[5]) ?? 0)
@@ -63,6 +67,8 @@ public extension SSH {
             io.ioTime = iotime
             io.weightedIO = weightedIO
             io.name = name
+            io.readBytesTotal = io.readBytes
+            io.writeBytesTotal = io.writeBytes
             ret.append(io)
         }
 

@@ -102,7 +102,9 @@ public extension SSH {
 
     func pollShell() {
         libssh2_channel_set_blocking(rawChannel, 0)
-        cancelShell()
+
+        socketShell?.cancel()
+        socketShell = nil
         socketShell = DispatchSource.makeReadSource(fileDescriptor: socket.fd, queue: queueSocket)
         socketShell?.setEventHandler { [self] in
             let (rc, erc) = read(PipeOutputStream { data in
@@ -114,13 +116,13 @@ public extension SSH {
             })
             guard rc > 0 || erc > 0 else {
                 guard rc != LIBSSH2_ERROR_SOCKET_RECV || erc != LIBSSH2_ERROR_SOCKET_RECV else {
-                    cancelShell()
+                    closeShell()
                     return
                 }
                 return
             }
             if !isRead {
-                cancelShell()
+                closeShell()
             }
         }
         socketShell?.setCancelHandler {
@@ -177,20 +179,15 @@ public extension SSH {
         return true
     }
 
-    /// Cancels the current shell session by canceling the associated socket source and setting it to nil.
-    func cancelShell() {
-        socketShell?.cancel()
-        socketShell = nil
-    }
-
     /// Closes the shell by canceling any active sources.
     ///
     /// This function is responsible for terminating the shell session
     /// by invoking the `cancelShell` method, which cancels any
     /// active sources associated with the shell.
     func closeShell() {
-        cancelShell()
-        sendEOF()
-        close(channel: rawChannel)
+        socketShell?.cancel()
+        socketShell = nil
+        // sendEOF()
+        closed(channel: rawChannel)
     }
 }

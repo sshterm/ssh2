@@ -118,16 +118,18 @@ public extension SSH {
     }
 
     func keepaliveFlow(_ keepaliveInterval: Int = 1) {
-        cancelFlowSource()
-        flowSource = DispatchSource.makeTimerSource(queue: queueKeep)
-        flowSource?.schedule(deadline: DispatchTime.now() + .seconds(keepaliveInterval), repeating: .seconds(keepaliveInterval), leeway: .seconds(keepaliveInterval))
+        call { [self] in
+            cancelFlowSource()
+            flowSource = DispatchSource.makeTimerSource(queue: queueKeep)
+            flowSource?.schedule(deadline: DispatchTime.now() + .seconds(keepaliveInterval), repeating: .seconds(keepaliveInterval), leeway: .seconds(keepaliveInterval))
 
-        flowSource?.setEventHandler { [self] in
-            self.sessionDelegate?.send(ssh: self, size: send)
-            self.sessionDelegate?.recv(ssh: self, size: recv)
+            flowSource?.setEventHandler { [self] in
+                self.sessionDelegate?.send(ssh: self, size: send)
+                self.sessionDelegate?.recv(ssh: self, size: recv)
+            }
+            flowSource?.setCancelHandler {}
+            flowSource?.resume()
         }
-        flowSource?.setCancelHandler {}
-        flowSource?.resume()
     }
 
     /// Starts a keepalive mechanism for the SSH session.
@@ -138,27 +140,29 @@ public extension SSH {
     ///
     /// - Parameter keepaliveInterval: The interval in seconds between keepalive messages. The default value is 5 seconds.
     func keepalive(_ keepaliveInterval: Int = 5) {
-        guard let rawSession, isAuthenticated else {
-            return
-        }
-        libssh2_keepalive_config(rawSession, 1, keepaliveInterval.load())
-        cancelKeepalive()
-        keepAliveSource = DispatchSource.makeTimerSource(queue: queueKeep)
+        call { [self] in
+            guard let rawSession, isAuthenticated else {
+                return
+            }
+            libssh2_keepalive_config(rawSession, 1, keepaliveInterval.load())
+            cancelKeepalive()
+            keepAliveSource = DispatchSource.makeTimerSource(queue: queueKeep)
 
-        guard let keepAliveSource else {
-            return
-        }
-        keepAliveSource.schedule(deadline: DispatchTime.now() + .seconds(keepaliveInterval), repeating: .seconds(keepaliveInterval), leeway: .seconds(keepaliveInterval))
+            guard let keepAliveSource else {
+                return
+            }
+            keepAliveSource.schedule(deadline: DispatchTime.now() + .seconds(keepaliveInterval), repeating: .seconds(keepaliveInterval), leeway: .seconds(keepaliveInterval))
 
-        keepAliveSource.setEventHandler { [self] in
-            sendKeepalive()
+            keepAliveSource.setEventHandler { [self] in
+                sendKeepalive()
+            }
+            keepAliveSource.setCancelHandler {
+                #if DEBUG
+                    print("心跳取消")
+                #endif
+            }
+            keepAliveSource.resume()
         }
-        keepAliveSource.setCancelHandler {
-            #if DEBUG
-                print("心跳取消")
-            #endif
-        }
-        keepAliveSource.resume()
     }
 
     /// Cancels the keep-alive mechanism for the SSH session.
@@ -167,13 +171,17 @@ public extension SSH {
     /// It should be called when the keep-alive mechanism is no longer needed or before
     /// the session is terminated to clean up resources.
     func cancelKeepalive() {
-        keepAliveSource?.cancel()
-        keepAliveSource = nil
+        call { [self] in
+            keepAliveSource?.cancel()
+            keepAliveSource = nil
+        }
     }
 
     func cancelFlowSource() {
-        flowSource?.cancel()
-        flowSource = nil
+        call { [self] in
+            flowSource?.cancel()
+            flowSource = nil
+        }
     }
 
     /// Suspends the keep-alive mechanism for the SSH session.
@@ -183,7 +191,9 @@ public extension SSH {
     /// Use this function when you want to temporarily stop sending keep-alive
     /// messages, for example, during a period of inactivity.
     func suspendKeepalive() {
-        keepAliveSource?.suspend()
+        call { [self] in
+            keepAliveSource?.suspend()
+        }
     }
 
     /// Resumes the keep-alive source if it is currently suspended.
@@ -191,7 +201,9 @@ public extension SSH {
     /// continues to operate, preventing the session from timing out
     /// due to inactivity.
     func resumeKeepalive() {
-        keepAliveSource?.resume()
+        call { [self] in
+            keepAliveSource?.resume()
+        }
     }
 
     /// Sends a keepalive message to the SSH server to maintain the session.
@@ -373,18 +385,19 @@ public extension SSH {
     ///
     /// - Note: Ensure that no operations are being performed on the SSH connection before calling this method.
     func free() {
+        isFree = true
         job.cancelAllOperations()
+        waitGroup.wait()
         closeShell()
         freeSFTP()
+        waitGroup.wait()
         freeSession()
     }
 
     func closed(session: OpaquePointer?) {
-        lock.withLock {
-            if session != nil {
-                libssh2_session_disconnect_ex(session, SSH_DISCONNECT_BY_APPLICATION, "Bye-Bye", "")
-                libssh2_session_free(session)
-            }
+        if session != nil {
+            libssh2_session_disconnect_ex(session, SSH_DISCONNECT_BY_APPLICATION, "Bye-Bye", "")
+            libssh2_session_free(session)
         }
     }
 
@@ -394,10 +407,12 @@ public extension SSH {
     /// by calling `libssh2_session_free` on the `rawSession` if it exists, and then
     /// sets `rawSession` to `nil`.
     func freeSession() {
-        cancelKeepalive()
-        closed(session: rawSession)
         cancelFlowSource()
-        rawSession = nil
+        cancelKeepalive()
+        lock.withLock {
+            closed(session: rawSession)
+            rawSession = nil
+        }
     }
 }
 

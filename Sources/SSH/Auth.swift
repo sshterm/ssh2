@@ -166,11 +166,11 @@ public extension SSH {
                     guard let promptI = prompts?[i], let text = promptI.text else {
                         continue
                     }
-                    guard let challenge = Data(bytes: text, count: promptI.length).string else {
+                    guard let prompt = Data(bytes: text, count: promptI.length).string else {
                         continue
                     }
 
-                    let password = ssh.sessionDelegate?.keyboardInteractive(ssh: ssh, prompt: challenge) ?? ""
+                    let password = ssh.sessionDelegate?.keyboardInteractive(ssh: ssh, prompt: prompt) ?? ""
                     let response = LIBSSH2_USERAUTH_KBDINT_RESPONSE(text: password.bytes, length: password.count.load())
                     responses?[i] = response
                 }

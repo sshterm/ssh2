@@ -30,18 +30,4 @@ public extension SSH {
             return rawChannel
         }
     }
-
-    func receivedEOF(channel _: OpaquePointer?) -> Bool {
-        guard let rawChannel else {
-            return true
-        }
-        return libssh2_channel_eof(rawChannel) != 0
-    }
-
-    func close(channel: OpaquePointer?) {
-        guard channel != nil else {
-            return
-        }
-        libssh2_channel_free(channel)
-    }
 }

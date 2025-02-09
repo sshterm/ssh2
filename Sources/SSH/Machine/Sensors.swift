@@ -10,6 +10,10 @@ public extension SSH {
         if let lines = await readLines(hostClass.appendingPathComponent("hwmon/hwmon*/temp*_input"), find: true) {
             files = lines
         }
+        let cpuNames = ["coretemp", // Intel
+                        "fam15h_power", // AMD
+                        "k10temp", // AMD
+                        "cpu"]
         var ret: [TemperatureStat] = []
         if files.isEmpty {
             if let files = await readLines(hostClass.appendingPathComponent("thermal/thermal_zone*/temp"), find: true) {
@@ -23,6 +27,7 @@ public extension SSH {
                     var t = TemperatureStat()
                     t.name = name
                     t.temperature = (Double(temperature) ?? 0) / 1000
+                    t.cpu = cpuNames.contains(name)
                     ret.append(t)
                 }
             }
@@ -47,6 +52,7 @@ public extension SSH {
                 t.temperature = (Double(temperature) ?? 0) / 1000
                 t.sensorHigh = (Double(high) ?? 0) / 1000
                 t.sensorCritical = (Double(crit) ?? 0) / 1000
+                t.cpu = cpuNames.contains(name)
                 ret.append(t)
             }
         }

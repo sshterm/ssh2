@@ -155,6 +155,12 @@ public struct NetIOCountersStat: Identifiable, Equatable {
     public var dropout: Int64 = 0
     public var fifoin: Int64 = 0
     public var fifoout: Int64 = 0
+    public var bytesSentTotal: Int64 = 0
+    public var bytesRecvTotal: Int64 = 0
+
+    public var mtu: Int64 = 0
+    public var speed: Int64 = 0
+    public var address: String = ""
 }
 
 public struct DiskIOCountersStat: Identifiable, Equatable {
@@ -174,6 +180,9 @@ public struct DiskIOCountersStat: Identifiable, Equatable {
     public var ioTime: Int64 = 0
     public var weightedIO: Int64 = 0
     public var name: String = ""
+    public var readBytesTotal: Int64 = 0
+    public var writeBytesTotal: Int64 = 0
+    public var size: Int64 = 0
 }
 
 public struct TemperatureStat: Identifiable, Equatable {
@@ -183,6 +192,7 @@ public struct TemperatureStat: Identifiable, Equatable {
     public var temperature: Double = 0.0
     public var sensorHigh: Double = 0.0
     public var sensorCritical: Double = 0.0
+    public var cpu: Bool = false
 }
 
 public struct SystemProcess: Identifiable, Equatable {
@@ -212,6 +222,7 @@ public struct HostPlatform: Identifiable, Equatable {
     public let id = UUID()
     public var platform: String = ""
     public var version: String = ""
+    public var dns: [String] = []
 }
 
 public enum ProcessStatus: String, CaseIterable {

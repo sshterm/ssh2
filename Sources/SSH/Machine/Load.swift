@@ -51,4 +51,11 @@ public extension SSH {
         }
         return stat
     }
+
+    func getClocksPerSec() async -> Double {
+        guard let clkTck = await exec("getconf CLK_TCK")?.string?.trim,!clkTck.isEmpty, let sec = Double(clkTck), sec > 0 else {
+            return 0x64
+        }
+        return sec
+    }
 }

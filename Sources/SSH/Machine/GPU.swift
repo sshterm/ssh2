@@ -1,8 +1,7 @@
-//
-//  File.swift
-//  SSH2
-//
-//  Created by 费三量 on 2025/2/8.
-//
+// GPU.swift
+// Copyright (c) 2025 ssh2.app
+// Created by admin@ssh2.app 2025/2/8.
 
 import Foundation
+
+public extension SSH {}

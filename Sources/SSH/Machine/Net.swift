@@ -19,6 +19,20 @@ public extension SSH {
             }
             ret2[i].bytesRecv = ret2[i].bytesRecv - t1.bytesRecv
             ret2[i].bytesSent = ret2[i].bytesSent - t1.bytesSent
+
+            guard ret2[i].name != "lo" else {
+                continue
+            }
+
+            guard let lines = await readLines(String(format: "%@ %@ %@", hostClass.appendingPathComponent(String(format: "net/%@/mtu", ret2[i].name)), hostClass.appendingPathComponent(String(format: "net/%@/speed", ret2[i].name)), hostClass.appendingPathComponent(String(format: "net/%@/address", ret2[i].name)))) else {
+                continue
+            }
+            guard lines.count == 3 else {
+                continue
+            }
+            ret2[i].mtu = Int64(lines[0]) ?? 0
+            ret2[i].speed = (Int64(lines[1]) ?? 0) * 1_000_000
+            ret2[i].address = lines[2]
         }
         return ret2
     }
@@ -52,6 +66,9 @@ public extension SSH {
             io.errout = (Int64(data[10]) ?? 0)
             io.dropout = (Int64(data[11]) ?? 0)
             io.fifoout = (Int64(data[12]) ?? 0)
+
+            io.bytesRecvTotal = io.bytesRecv
+            io.bytesSentTotal = io.bytesSent
 
             ret.append(io)
         }

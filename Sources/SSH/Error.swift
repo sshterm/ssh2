@@ -14,17 +14,19 @@ public extension SSH {
     ///
     /// - Returns: An `Error` object representing the last error, or `nil` if no error is found.
     var lastError: Error? {
-        guard let rawSession else {
-            return nil
+        call { [self] in
+            guard let rawSession else {
+                return nil
+            }
+            var cstr: UnsafeMutablePointer<CChar>?
+            let code = libssh2_session_last_error(rawSession, &cstr, nil, 0)
+            guard code != LIBSSH2_ERROR_NONE else {
+                return nil
+            }
+            guard let cstr else {
+                return nil
+            }
+            return NSError(domain: "libssh2", code: Int(code), userInfo: [NSLocalizedDescriptionKey: cstr.string])
         }
-        var cstr: UnsafeMutablePointer<CChar>?
-        let code = libssh2_session_last_error(rawSession, &cstr, nil, 0)
-        guard code != LIBSSH2_ERROR_NONE else {
-            return nil
-        }
-        guard let cstr else {
-            return nil
-        }
-        return NSError(domain: "libssh2", code: Int(code), userInfo: [NSLocalizedDescriptionKey: cstr.string])
     }
 }

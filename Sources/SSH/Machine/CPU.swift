@@ -6,13 +6,6 @@ import Extension
 import Foundation
 
 public extension SSH {
-    func getClocksPerSec() async -> Double {
-        guard let clkTck = await exec("getconf CLK_TCK")?.string?.trim,!clkTck.isEmpty, let sec = Double(clkTck), sec > 0 else {
-            return 0x64
-        }
-        return sec
-    }
-
     func getCPUTimesStat(clkTck: Double = 0x64) async -> [CPUTimesStat] {
         let ret1: [CPUTimesStat] = await findCPUTimesStat(clkTck: clkTck)
         sleep(1)
