@@ -7,7 +7,7 @@ import Foundation
 public extension SSH {
     func getDiskIOCountersStat() async -> [DiskIOCountersStat] {
         let ret1: [DiskIOCountersStat] = await findDiskIOCountersStat()
-        sleep(1)
+        try? await Task.sleep(for: .seconds(1))
         var ret2: [DiskIOCountersStat] = await findDiskIOCountersStat()
         let cout = ret2.count - 1
         guard cout > 0 else {

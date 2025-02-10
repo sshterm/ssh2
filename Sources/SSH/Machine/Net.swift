@@ -7,7 +7,7 @@ import Foundation
 public extension SSH {
     func getNetIOCountersStat() async -> [NetIOCountersStat] {
         let ret1: [NetIOCountersStat] = await findNetIOCountersStat()
-        sleep(1)
+        try? await Task.sleep(for: .seconds(1))
         var ret2: [NetIOCountersStat] = await findNetIOCountersStat()
         let cout = ret2.count - 1
         guard cout > 0 else {

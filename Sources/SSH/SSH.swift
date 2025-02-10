@@ -20,7 +20,7 @@ public class SSH {
     /// This value is defined by the `LIBSSH2_VERSION` macro.
     public static let libssh2_version = LIBSSH2_VERSION
 
-    static var traceFD: Int32 = -1
+    public static var traceFD: Int32 = -1
 
     /// The size of the buffer used for SSH operations.
     ///
@@ -110,11 +110,10 @@ public class SSH {
         libssh2_init(0)
     }
 
-    public init(_ host: String) {
-        let url = URL(string: host.withPrefix("ssh://"))
-        self.host = url?.host ?? ""
-        port = String(format: "%d", url?.port ?? 22)
-        user = url?.user ?? "root"
+    public init(_ connect: Connect) {
+        host = connect.host
+        port = connect.port
+        user = connect.user
         timeout = 5
         compress = true
         libssh2_init(0)

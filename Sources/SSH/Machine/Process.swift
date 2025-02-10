@@ -8,7 +8,7 @@ import Foundation
 public extension SSH {
     func getSystemProcess(bootTime: Double, clkTck: Double = 0x64) async -> [SystemProcess] {
         let ret1: [SystemProcess] = await findSystemProcess(bootTime: bootTime, clkTck: clkTck)
-//        sleep(1)
+//        try? await Task.sleep(for: .seconds(1))
 //        var ret2: [SystemProcess] = await findSystemProcess(bootTime: bootTime,clkTck: clkTck)
 //        let cout = ret2.count - 1
 //        guard cout > 0 else {

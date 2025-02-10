@@ -8,7 +8,7 @@ import Foundation
 public extension SSH {
     func getCPUTimesStat(clkTck: Double = 0x64) async -> [CPUTimesStat] {
         let ret1: [CPUTimesStat] = await findCPUTimesStat(clkTck: clkTck)
-        sleep(1)
+        try? await Task.sleep(for: .seconds(1))
         var ret2: [CPUTimesStat] = await findCPUTimesStat(clkTck: clkTck)
         let cout = ret2.count - 1
         guard cout > 0 else {

@@ -17,12 +17,13 @@ public extension SSH {
     func closed(channel: OpaquePointer?) {
         call { [self] in
             if channel != nil {
-                if libssh2_channel_eof(channel) != 0 {
-                    libssh2_channel_send_eof(channel)
-                    libssh2_channel_wait_eof(channel)
+                if isConnected {
+                    if libssh2_channel_eof(channel) != 0 {
+                        libssh2_channel_send_eof(channel)
+                        libssh2_channel_wait_eof(channel)
+                        libssh2_channel_wait_closed(channel)
+                    }
                 }
-
-                libssh2_channel_wait_closed(channel)
                 libssh2_channel_free(channel)
             }
         }

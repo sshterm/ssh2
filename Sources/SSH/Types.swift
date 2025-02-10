@@ -208,3 +208,21 @@ public enum AuthType: String, CaseIterable {
         }
     }
 }
+
+public struct Connect: Identifiable, Equatable, Hashable, Codable {
+    public let id: UUID = .init()
+    public let user: String
+    public let host: String
+    public let port: String
+    public let password: String
+    public init(user: String, host: String, port: String, password: String) {
+        self.user = user
+        self.host = host
+        self.port = port
+        self.password = password
+    }
+
+    public enum CodingKeys: String, CodingKey {
+        case user, host, port, password
+    }
+}

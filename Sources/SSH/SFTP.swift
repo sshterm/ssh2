@@ -523,11 +523,11 @@ public extension SSH {
      If `rawSFTP` is `nil`, this method does nothing.
      */
     func freeSFTP() {
-        if let rawSFTP {
-            callSSH2 {
+        lock.withLock {
+            if let rawSFTP {
                 libssh2_sftp_shutdown(rawSFTP)
+                self.rawSFTP = nil
             }
-            self.rawSFTP = nil
         }
     }
 }

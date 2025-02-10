@@ -104,7 +104,7 @@ extension SSH {
     ///   - message: A pointer to the C-style string message to be traced.
     ///   - messageLen: The length of the message in bytes.
     func trace(message: UnsafePointer<CChar>, messageLen: Int) {
-        guard SSH.traceFD != -2 else {
+        guard SSH.traceFD != -1 else {
             return
         }
         addOperation {
@@ -124,7 +124,7 @@ extension SSH {
         - languageLen: An unused parameter representing the length of the language string.
      */
     func debug(sess _: UnsafeRawPointer, reason _: CInt, message: UnsafePointer<CChar>, messageLen: CInt, language _: UnsafePointer<CChar>, languageLen _: CInt) {
-        guard SSH.traceFD != -2 else {
+        guard SSH.traceFD != -1 else {
             return
         }
         addOperation {

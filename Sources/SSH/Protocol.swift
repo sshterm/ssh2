@@ -9,6 +9,8 @@ public protocol SessionDelegate {
     /// Disconnects
     func disconnect()
 
+    func authenticate(ssh: SSH)
+
     /// Performs the SSH handshake to establish a connection with the SSH server.
     ///
     /// - Parameters:

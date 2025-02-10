@@ -113,6 +113,8 @@ public extension SSH {
                 return false
             }
 
+            sessionDelegate?.authenticate(ssh: self)
+
             return true
         }
     }

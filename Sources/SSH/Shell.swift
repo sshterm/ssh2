@@ -101,8 +101,7 @@ public extension SSH {
     }
 
     func pollShell() {
-        libssh2_channel_set_blocking(rawChannel, 0)
-
+        isBlocking = false
         socketShell?.cancel()
         socketShell = nil
         socketShell = DispatchSource.makeReadSource(fileDescriptor: socket.fd, queue: queueSocket)
@@ -114,14 +113,7 @@ public extension SSH {
                 onData(data, false)
                 return isPollError
             })
-            guard rc > 0 || erc > 0 else {
-                guard rc != LIBSSH2_ERROR_SOCKET_RECV || erc != LIBSSH2_ERROR_SOCKET_RECV else {
-                    closeShell()
-                    return
-                }
-                return
-            }
-            if !isRead {
+            if rc == LIBSSH2_ERROR_SOCKET_RECV || erc == LIBSSH2_ERROR_SOCKET_RECV || receivedEOF || receivedExit {
                 closeShell()
             }
         }
@@ -143,15 +135,15 @@ public extension SSH {
     }
 
     var isPoll: Bool {
-        guard let rawChannel = rawChannel else {
-            return false
+        guard let rawChannel else {
+            return true
         }
         return libssh2_poll_channel_read(rawChannel, 0) != 0
     }
 
     var isPollError: Bool {
-        guard let rawChannel = rawChannel else {
-            return false
+        guard let rawChannel else {
+            return true
         }
         return libssh2_poll_channel_read(rawChannel, SSH_EXTENDED_DATA_STDERR) != 0
     }
@@ -185,9 +177,11 @@ public extension SSH {
     /// by invoking the `cancelShell` method, which cancels any
     /// active sources associated with the shell.
     func closeShell() {
-        socketShell?.cancel()
-        socketShell = nil
-        // sendEOF()
-        closed(channel: rawChannel)
+        lock.withLock {
+            socketShell?.cancel()
+            socketShell = nil
+            closed(channel: rawChannel)
+            rawChannel = nil
+        }
     }
 }
