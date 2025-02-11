@@ -17,7 +17,7 @@ public extension SSH {
     /// - Returns: A `Bool` indicating whether the file was successfully sent.
     func send(local: String, remote: String, permissions: FilePermissions = .default, sftp: Bool = false, progress: @escaping (_ send: Int) -> Bool = { _ in true }) async -> Bool {
         if sftp {
-            await upload(local: local, remote: remote, permissions: permissions, progress: progress)
+            return await upload(local: local, remote: remote, permissions: permissions, progress: progress)
         }
         guard let stream = InputStream(fileAtPath: local) else {
             return false
