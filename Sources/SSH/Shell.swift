@@ -119,6 +119,7 @@ public extension SSH {
         }
         socketShell?.setCancelHandler {
             self.channelDelegate?.connect(ssh: self, online: false)
+            self.socketShell = nil
         }
         socketShell?.resume()
     }
@@ -179,7 +180,6 @@ public extension SSH {
     func closeShell() {
         lock.withLock {
             socketShell?.cancel()
-            socketShell = nil
             closed(channel: rawChannel)
             rawChannel = nil
         }
