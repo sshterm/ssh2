@@ -57,6 +57,10 @@ public enum PubDNS: String, CaseIterable {
         }
     }
 
+    public static var `default`: PubDNS {
+        Locale.current.language.isEquivalent(to: Locale(identifier: "zh-Hans").language) ? .alidns : .google
+    }
+
     public var ips: [String] {
         switch self {
         case .alidns:

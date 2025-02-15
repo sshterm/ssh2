@@ -146,12 +146,13 @@ public extension SSH {
         guard let rawSession, isAuthenticated else {
             return
         }
-        libssh2_keepalive_config(rawSession, 1, keepaliveInterval.load())
+        let s = keepaliveInterval > 1 ? keepaliveInterval : 5
+        libssh2_keepalive_config(rawSession, 1, s.load())
         cancelKeepalive()
-        self.keepAliveSource = nil
+        keepAliveSource = nil
         keepAliveSource = DispatchSource.makeTimerSource(queue: queueKeep)
 
-        keepAliveSource?.schedule(deadline: DispatchTime.now() + .seconds(keepaliveInterval), repeating: .seconds(keepaliveInterval), leeway: .seconds(keepaliveInterval))
+        keepAliveSource?.schedule(deadline: DispatchTime.now() + .seconds(s), repeating: .seconds(s), leeway: .seconds(s))
 
         keepAliveSource?.setEventHandler { [self] in
             sendKeepalive()
