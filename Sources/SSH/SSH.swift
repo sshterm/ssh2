@@ -14,7 +14,7 @@ public class SSH {
     ///
     /// This constant holds the version number of the SSH library as a string.
     /// It can be used to check the version of the library being used in the project.
-    public static let version = "0.0.1"
+    public static let version = "0.0.2"
 
     /// A constant representing the version of the libssh2 library being used.
     /// This value is defined by the `LIBSSH2_VERSION` macro.
