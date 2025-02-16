@@ -5,7 +5,6 @@
 import Darwin
 import Extension
 import Foundation
-import Network
 
 public struct Socket {
     public internal(set) var fd: Int32 = -1
