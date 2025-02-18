@@ -14,10 +14,20 @@ public extension SSH {
         guard fields.count > 2 else {
             return nil
         }
+        let cpu = Double(await getCPUCount())
         var ret = AvgStat()
-        ret.load1 = Double(fields[0]) ?? 0.0
-        ret.load5 = Double(fields[1]) ?? 0.0
-        ret.load15 = Double(fields[2]) ?? 0.0
+        ret.load1 = (Double(fields[0]) ?? 0.0) / cpu
+        ret.load5 = (Double(fields[1]) ?? 0.0) / cpu
+        ret.load15 = (Double(fields[2]) ?? 0.0) / cpu
+        if ret.load1 < 0 {
+            ret.load1 = 0
+        }
+        if ret.load5 < 0 {
+            ret.load5 = 0
+        }
+        if ret.load15 < 0 {
+            ret.load15 = 0
+        }
         return ret
     }
 
