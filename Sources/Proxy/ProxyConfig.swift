@@ -1,4 +1,4 @@
-// ProxyConfiguration.swift
+// ProxyConfig.swift
 // Copyright (c) 2025 ssh2.app
 // Created by admin@ssh2.app 2025/1/25.
 
@@ -16,7 +16,7 @@ import Foundation
 ///   - username: An optional username for proxy authentication.
 ///   - password: An optional password for proxy authentication.
 ///   - type: The type of proxy server (e.g., HTTP, SOCKS5).
-public struct ProxyConfiguration {
+public struct ProxyConfig {
     let host: String
     let port: String
     let username: String

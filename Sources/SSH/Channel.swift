@@ -67,17 +67,29 @@ public extension SSH {
     }
 
     func exec(_ command: String, count: Int = 0) async -> Data? {
+        #if DEBUG
+            print(command)
+        #endif
         var data = Data()
+        var error = Data()
         let rc = await exec(command, PipeOutputStream { d in
             data.append(d)
             if count > 0 {
                 return data.count < count
             }
             return true
+        }, PipeOutputStream { d in
+            error.append(d)
+            return true
         })
+        self.error = error.string
         guard rc >= 0 else {
             return nil
         }
         return data
+    }
+
+    func exec(_ command: [String]) async -> Data? {
+        return await exec(command.joined(separator: " "))
     }
 }

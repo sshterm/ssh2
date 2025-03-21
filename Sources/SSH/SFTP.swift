@@ -367,8 +367,8 @@ public extension SSH {
             }
             var data: [FileAttributes] = []
             var rc: Int32
-            let buffer: Buffer<UInt8> = .init(0x200)
-            let longEntry: Buffer<UInt8> = .init(0x400)
+            let buffer: Buffer<CChar> = .init(0x200)
+            let longEntry: Buffer<CChar> = .init(0x400)
             var attrs = LIBSSH2_SFTP_ATTRIBUTES()
             repeat {
                 rc = callSSH2 {

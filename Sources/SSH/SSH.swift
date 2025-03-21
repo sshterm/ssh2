@@ -6,6 +6,7 @@ import Crypto
 import CSSH
 import Extension
 import Foundation
+import Network
 import Proxy
 import Socket
 
@@ -30,7 +31,7 @@ public class SSH {
     /// An array of filenames that should be ignored.
     ///
     /// This array contains the default filenames `"."` and `".."` which are typically used to represent the current directory and the parent directory, respectively.
-    public var ignoredfiles = [".", ".."]
+    public var ignoredfiles: [String] = [".", "..", ".DS_Store"]
 
     public internal(set) var socket: Socket = .init()
     public let host: String
@@ -53,7 +54,7 @@ public class SSH {
     /// A string representing the banner message for the SSH session.
     public var banner = ""
 
-    public var proxy: ProxyConfiguration?
+    public var proxy: ProxyConfig?
 
     /// A Boolean property that determines whether the SSH connection operates in blocking mode.
     ///
@@ -90,6 +91,10 @@ public class SSH {
     public internal(set) var send: Int64 = 0
     public internal(set) var recv: Int64 = 0
     public internal(set) var isFree: Bool = false
+
+    public internal(set) var error: String?
+
+    public var encoding: String.Encoding = .utf8
 
     var flowSource: DispatchSourceTimer?
 

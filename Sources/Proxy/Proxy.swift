@@ -7,8 +7,8 @@ import Foundation
 import Socket
 
 public class Proxy {
-    let configuration: ProxyConfiguration
-    public init(_ configuration: ProxyConfiguration) {
+    let configuration: ProxyConfig
+    public init(_ configuration: ProxyConfig) {
         self.configuration = configuration
     }
 }

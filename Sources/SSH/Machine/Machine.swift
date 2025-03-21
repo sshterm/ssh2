@@ -259,3 +259,28 @@ public enum ProcessStatus: String, CaseIterable {
         }
     }
 }
+
+public struct DockerStat: Identifiable, Equatable {
+    public var id: String {
+        containerID
+    }
+
+    public let containerID: String
+    public let name: String
+    public let image: String
+    public let status: String
+    public let running: Bool
+}
+
+public struct DockerStats: Identifiable, Equatable {
+    public var id: String {
+        containerID
+    }
+
+    public let containerID: String
+    public let name: String
+    public let CPUPerc: String
+    public let memPerc: String
+    public let netIO: String
+    public let blockIO: String
+}

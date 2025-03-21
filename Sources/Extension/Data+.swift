@@ -22,7 +22,7 @@ public extension Data {
 
     /// A computed property that returns the hexadecimal representation of the data as a string.
     ///
-    /// - Returns: A string containing the hexadecimal representation of the data.
+    /// - Returns: A string containing the hexadecimal representation of the
     var hexString: String {
         hex.joined()
     }
