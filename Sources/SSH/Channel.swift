@@ -53,10 +53,10 @@ public extension SSH {
                 closed(channel: rawChannel)
                 return -1
             }
+            let rc = io.Copy(output, ChannelInputStream(rawChannel: rawChannel, ssh: self, wait: true), bufferSize)
             if let stderr {
                 io.Copy(stderr, ChannelInputStream(rawChannel: rawChannel, ssh: self, err: true, wait: true), bufferSize)
             }
-            let rc = io.Copy(output, ChannelInputStream(rawChannel: rawChannel, ssh: self, wait: true), bufferSize)
             closed(channel: rawChannel)
             return rc
         }

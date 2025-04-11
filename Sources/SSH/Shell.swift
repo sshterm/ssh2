@@ -13,6 +13,7 @@ public extension SSH {
             guard rawChannel != nil else {
                 return false
             }
+            pollShell()
             var code = callSSH2 {
                 libssh2_channel_request_pty_ex(rawChannel, type.name, type.name.count.load(), nil, 0, width, height, LIBSSH2_TERM_WIDTH_PX, LIBSSH2_TERM_HEIGHT_PX)
             }
@@ -20,7 +21,6 @@ public extension SSH {
                 closeShell()
                 return false
             }
-            pollShell()
             code = callSSH2 {
                 libssh2_channel_process_startup(rawChannel, "shell", 5, nil, 0)
             }

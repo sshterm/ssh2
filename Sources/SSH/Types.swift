@@ -226,3 +226,11 @@ public struct Connect: Identifiable, Equatable, Hashable, Codable {
         case user, host, port, password
     }
 }
+
+public enum ContainerType: String, CaseIterable {
+    case docker, podman
+
+    var command: String {
+        rawValue
+    }
+}
