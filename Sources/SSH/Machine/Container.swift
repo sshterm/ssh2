@@ -6,7 +6,7 @@ import Foundation
 
 public extension SSH {
     func getDockerStat() async -> [DockerStat]? {
-        guard let data = await exec(["docker", "ps", "-a", "--no-trunc", "--format", "\"{{.ID}}|{{.Image}}|{{.Names}}|{{.Status}}\""]) else {
+        guard let data = await exec([container.command, "ps", "-a", "--no-trunc", "--format", "\"{{.ID}}|{{.Image}}|{{.Names}}|{{.Status}}\""]) else {
             return nil
         }
         guard let text = data.string?.trim,!text.isEmpty else {
@@ -26,19 +26,19 @@ public extension SSH {
     }
 
     func dockerStart(_ id: String) async {
-        await exec(["docker", "start", id])
+        await exec([container.command, "start", id])
     }
 
     func dockerStop(_ id: String) async {
-        await exec(["docker", "stop", id])
+        await exec([container.command, "stop", id])
     }
 
     func dockerRestart(_ id: String) async {
-        await exec(["docker", "restart", id])
+        await exec([container.command, "restart", id])
     }
 
     func dockerInspect(_ id: String) async -> String? {
-        guard let data = await exec(["docker", "inspect", id]) else {
+        guard let data = await exec([container.command, "inspect", id]) else {
             return nil
         }
         guard let text = data.string?.trim,!text.isEmpty else {
@@ -48,7 +48,7 @@ public extension SSH {
     }
 
     func dockerLogs(_ id: String) async -> String? {
-        guard let data = await exec(["docker", "logs", "--tail", "1000", id]) else {
+        guard let data = await exec([container.command, "logs", "--tail", "1000", id]) else {
             return nil
         }
         guard let text = data.string?.trim,!text.isEmpty else {
@@ -58,7 +58,7 @@ public extension SSH {
     }
 
     func getDockerStats() async -> [DockerStats]? {
-        guard let data = await exec(["docker", "stats", "--no-trunc", "--no-stream", "--format", "\"{{.ID}}|{{.Name}}|{{.CPUPerc}}|{{.MemPerc}}|{{.NetIO}}|{{.BlockIO}}\""]) else {
+        guard let data = await exec([container.command, "stats", "--no-trunc", "--no-stream", "--format", "\"{{.ID}}|{{.Name}}|{{.CPUPerc}}|{{.MemPerc}}|{{.NetIO}}|{{.BlockIO}}\""]) else {
             return nil
         }
         guard let text = data.string?.trim,!text.isEmpty else {
