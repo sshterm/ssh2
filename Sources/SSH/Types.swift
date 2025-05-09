@@ -209,6 +209,20 @@ public enum AuthType: String, CaseIterable {
     }
 }
 
+/// A structure representing a connection configuration.
+///
+/// The `Connect` structure conforms to `Identifiable`, `Equatable`, `Hashable`, and `Codable` protocols,
+/// making it suitable for use in SwiftUI, collections, and serialization.
+///
+/// - Properties:
+///   - `id`: A unique identifier for the connection, automatically generated as a `UUID`.
+///   - `user`: The username for the connection.
+///   - `host`: The hostname or IP address of the server.
+///   - `port`: The port number for the connection, represented as a string.
+///   - `password`: The password for the connection.
+///
+/// - Note:
+///   The `CodingKeys` enum is used to specify the keys for encoding and decoding the structure.
 public struct Connect: Identifiable, Equatable, Hashable, Codable {
     public let id: UUID = .init()
     public let user: String
@@ -227,6 +241,12 @@ public struct Connect: Identifiable, Equatable, Hashable, Codable {
     }
 }
 
+/// An enumeration representing different types of containerization platforms.
+///
+/// - `docker`: Represents the Docker containerization platform.
+/// - `podman`: Represents the Podman containerization platform.
+///
+/// Each case has an associated `command` property that returns the raw string value of the case.
 public enum ContainerType: String, CaseIterable {
     case docker, podman
 

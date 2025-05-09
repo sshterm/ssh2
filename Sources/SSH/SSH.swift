@@ -117,6 +117,11 @@ public class SSH {
         libssh2_init(0)
     }
 
+    /// Initializes a new SSH connection with the specified connection details.
+    ///
+    /// - Parameter connect: A `Connect` instance containing the host, port, user, and other connection details.
+    /// - Note: The default timeout is set to 5 seconds, and compression is enabled by default.
+    /// - Important: This initializer also initializes the libssh2 library with a zero flag.
     public init(_ connect: Connect) {
         host = connect.host
         port = connect.port
