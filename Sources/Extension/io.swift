@@ -39,12 +39,8 @@ public class io {
         _ w: OutputStream, _ r: InputStream, _ bufferSize: Int = 0x4000,
         _ progress: @escaping (_ send: Int) -> Bool = { _ in true }
     ) -> Int {
-        if w.streamStatus == .notOpen {
-            w.open()
-        }
-        if r.streamStatus == .notOpen {
-            r.open()
-        }
+        w.open()
+        r.open()
         defer {
             w.close()
             r.close()
@@ -69,7 +65,7 @@ public class io {
                 total += written
             }
             if !progress(total) {
-                return -1
+                return total
             }
         }
         return total
