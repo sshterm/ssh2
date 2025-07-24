@@ -1,6 +1,6 @@
 // io.swift
-// Copyright (c) 2025 ssh2.app
-// Created by admin@ssh2.app 2025/1/21.
+// Copyright (c) 2025 plexterm.com
+// Created by admin@plexterm.com 2025/6/8.
 
 import Darwin
 import Foundation
@@ -14,7 +14,10 @@ public class io {
     ///   - bufferSize: The size of the buffer to use for copying data.
     ///   - progress: A closure that is called with the number of bytes sent. Returns a boolean indicating whether to continue the copy operation.
     /// - Returns: The total number of bytes copied.
-    public static func Copy(_ r: InputStream, _ w: OutputStream, _ bufferSize: Int, _ progress: @escaping (_ send: Int) -> Bool = { _ in true }) -> Int {
+    public static func Copy(
+        _ r: InputStream, _ w: OutputStream, _ bufferSize: Int = 0x4000,
+        _ progress: @escaping (_ send: Int) -> Bool = { _ in true }
+    ) -> Int {
         Copy(w, r, bufferSize, progress)
     }
 
@@ -32,37 +35,50 @@ public class io {
     /// - Note: The streams are opened and closed within this function. The buffer is allocated and deallocated within this function.
     ///
     /// - Important: If the `progress` closure returns `false`, the function will stop copying and return the total number of bytes copied so far.
-    public static func Copy(_ w: OutputStream, _ r: InputStream, _ bufferSize: Int, _ progress: @escaping (_ send: Int) -> Bool = { _ in true }) -> Int {
-        w.open()
-        r.open()
+    public static func Copy(
+        _ w: OutputStream, _ r: InputStream, _ bufferSize: Int = 0x4000,
+        _ progress: @escaping (_ send: Int) -> Bool = { _ in true }
+    ) -> Int {
+        if w.streamStatus == .notOpen {
+            w.open()
+        }
+        if r.streamStatus == .notOpen {
+            r.open()
+        }
         defer {
             w.close()
             r.close()
         }
-
         let buffer: Buffer<UInt8> = .init(bufferSize)
         var total = 0
-        var nread, rc: Int
-        while r.hasBytesAvailable && w.hasSpaceAvailable {
-            nread = r.read(buffer.buffer, maxLength: buffer.count)
+        while r.hasBytesAvailable, w.hasSpaceAvailable {
+            let nread = r.read(buffer.buffer, maxLength: buffer.count)
             guard nread > 0 else {
                 if nread < 0 {
                     return nread
                 }
                 return total
             }
-            while nread > 0 && w.hasSpaceAvailable {
-                rc = w.write(buffer.buffer, maxLength: nread)
-                if rc < 0 {
-                    return rc
+            var offset = 0
+            while offset < nread, w.hasSpaceAvailable {
+                let written = w.write(buffer.buffer + offset, maxLength: nread - offset)
+                if written < 0 {
+                    return written
                 }
-                total += rc
-                nread -= rc
-                if !progress(total) {
-                    return total
-                }
+                offset += written
+                total += written
+            }
+            if !progress(total) {
+                return -1
             }
         }
         return total
+    }
+
+    public static func call<T>(_: Bool = true, _ callback: @escaping () -> T) async -> T {
+        await withUnsafeContinuation { continuation in
+            var ret: T = callback()
+            continuation.resume(returning: ret)
+        }
     }
 }
