@@ -77,7 +77,7 @@ public class io {
 
     public static func call<T>(_: Bool = true, _ callback: @escaping () -> T) async -> T {
         await withUnsafeContinuation { continuation in
-            var ret: T = callback()
+            let ret: T = callback()
             continuation.resume(returning: ret)
         }
     }
