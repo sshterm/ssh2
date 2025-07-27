@@ -14,11 +14,20 @@ public class io {
     ///   - bufferSize: The size of the buffer to use for copying data.
     ///   - progress: A closure that is called with the number of bytes sent. Returns a boolean indicating whether to continue the copy operation.
     /// - Returns: The total number of bytes copied.
-    public static func Copy(
-        _ r: InputStream, _ w: OutputStream, _ bufferSize: Int = 0x4000,
-        _ progress: @escaping (_ send: Int) -> Bool = { _ in true }
-    ) -> Int {
+    public static func Copy(_ r: InputStream, _ w: OutputStream, _ bufferSize: Int = 0x4000, _ progress: @escaping (_ send: Int) -> Bool = { _ in true }) async -> Int {
+        await call {
+            Copy(w, r, bufferSize, progress)
+        }
+    }
+
+    public static func Copy(_ r: InputStream, _ w: OutputStream, _ bufferSize: Int = 0x4000, _ progress: @escaping (_ send: Int) -> Bool = { _ in true }) -> Int {
         Copy(w, r, bufferSize, progress)
+    }
+
+    public static func Copy(_ w: OutputStream, _ r: InputStream, _ bufferSize: Int = 0x4000, _ progress: @escaping (_ send: Int) -> Bool = { _ in true }) async -> Int {
+        await call {
+            Copy(w, r, bufferSize, progress)
+        }
     }
 
     /// Copies data from an `InputStream` to an `OutputStream` with a specified buffer size and progress callback.
@@ -35,10 +44,7 @@ public class io {
     /// - Note: The streams are opened and closed within this function. The buffer is allocated and deallocated within this function.
     ///
     /// - Important: If the `progress` closure returns `false`, the function will stop copying and return the total number of bytes copied so far.
-    public static func Copy(
-        _ w: OutputStream, _ r: InputStream, _ bufferSize: Int = 0x4000,
-        _ progress: @escaping (_ send: Int) -> Bool = { _ in true }
-    ) -> Int {
+    public static func Copy(_ w: OutputStream, _ r: InputStream, _ bufferSize: Int = 0x4000, _ progress: @escaping (_ send: Int) -> Bool = { _ in true }) -> Int {
         w.open()
         r.open()
         defer {
@@ -47,7 +53,7 @@ public class io {
         }
         let buffer: Buffer<UInt8> = .init(bufferSize)
         var total = 0
-        while r.hasBytesAvailable, w.hasSpaceAvailable {
+        while r.hasBytesAvailable {
             let nread = r.read(buffer.buffer, maxLength: buffer.count)
             guard nread > 0 else {
                 if nread < 0 {
