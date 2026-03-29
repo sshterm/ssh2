@@ -1,6 +1,8 @@
 # ssh2
 Swift + libssh2 + OpenSSL
 
+# 支持多路复用和负载
+https://github.com/foxterm/SSH
 
 # Swift Package Manager
 
